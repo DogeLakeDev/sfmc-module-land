@@ -5,9 +5,9 @@ Wave C official SFMC module: **land**（现代地产庄园 · 只租不卖租赁
 ## Develop
 
 ```bash
-npm install
-npm run typecheck
-npm test
+pnpm install
+pnpm run typecheck
+pnpm run test
 ```
 
 Install into platform:
