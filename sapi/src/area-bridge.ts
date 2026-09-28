@@ -89,7 +89,8 @@ export async function syncLandArea(land: LandRow): Promise<void> {
   }
 
   const features: Record<string, Record<string, unknown>> = {
-    land_core: { landId: land.id, status: land.status },
+    // name 给地图显示领地名称。area 里的区域名仍是 land:id。
+    land_core: { landId: land.id, status: land.status, name: land.name },
   };
 
   // 休眠期暂停增益，但保留 land_core 保护（建筑仍受区域托管）

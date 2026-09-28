@@ -1,5 +1,5 @@
 {
-  "$schema": "https://raw.githubusercontent.com/DogeLakeDev/ScriptsForMinecraftServer/main/modules/sdk/@sfmc-sdk/schemas/ui-screen.v1.schema.json",
+  "$schema": "https://cdn.jsdelivr.net/gh/DogeLakeDev/ScriptsForMinecraftServer@main/modules/sdk/@sfmc-sdk/schemas/ui-screen.v1.schema.json",
   "formatVersion": 1,
   "id": "land.detail",
   "name": "庄园详情",
