@@ -2,18 +2,15 @@
  * land 私有表定义与基础读写。
  */
 
-import { db } from "@sfmc-bds/sdk/sapi/db";
+import { getLandDb } from "./clients.js";
 import type { Aabb } from "./types.js";
-import type { LandRow, LandStatus, MemberRow, MemberRole, PerkId, PerkRow } from "./types.js";
+import type { LandRow } from "./types.js";
 
 export const LANDS_TABLE = "sfmc_lands";
-export const MEMBERS_TABLE = "sfmc_land_members";
-export const PERKS_TABLE = "sfmc_land_perks";
-export const GUESTBOOK_TABLE = "sfmc_land_guestbook";
 export const OPS_TABLE = "sfmc_land_operations";
 
 export async function defineLandTables(): Promise<void> {
-  await db.defineTable(LANDS_TABLE, {
+  await getLandDb().defineTable(LANDS_TABLE, {
     id: { type: "TEXT", primary: true },
     owner_id: { type: "TEXT", notNull: true, index: true },
     name: { type: "TEXT", default: "" },
@@ -32,42 +29,12 @@ export async function defineLandTables(): Promise<void> {
     daily_rent: { type: "INTEGER", notNull: true, default: 1 },
     lease_until: { type: "INTEGER", notNull: true, index: true },
     grace_until: { type: "INTEGER", default: 0 },
-    ticket_price: { type: "INTEGER", default: 0 },
-    is_public: { type: "INTEGER", default: 0 },
-    likes_count: { type: "INTEGER", default: 0 },
     version: { type: "INTEGER", default: 1 },
     created_at: { type: "INTEGER", notNull: true },
     updated_at: { type: "INTEGER", notNull: true },
   });
 
-  await db.defineTable(MEMBERS_TABLE, {
-    id: { type: "TEXT", primary: true },
-    land_id: { type: "TEXT", notNull: true, index: true },
-    player_id: { type: "TEXT", notNull: true, index: true },
-    role: { type: "TEXT", notNull: true, default: "member" },
-    permissions_json: { type: "TEXT", default: "{}" },
-    updated_at: { type: "INTEGER", notNull: true },
-  });
-
-  await db.defineTable(PERKS_TABLE, {
-    id: { type: "TEXT", primary: true },
-    land_id: { type: "TEXT", notNull: true, index: true },
-    perk_id: { type: "TEXT", notNull: true },
-    enabled: { type: "INTEGER", default: 0 },
-    settings_json: { type: "TEXT", default: "{}" },
-  });
-
-  await db.defineTable(GUESTBOOK_TABLE, {
-    id: { type: "TEXT", primary: true },
-    land_id: { type: "TEXT", notNull: true, index: true },
-    visitor_id: { type: "TEXT", default: "" },
-    visitor_name: { type: "TEXT", default: "" },
-    message: { type: "TEXT", default: "" },
-    is_like: { type: "INTEGER", default: 0 },
-    created_at: { type: "INTEGER", notNull: true, index: true },
-  });
-
-  await db.defineTable(OPS_TABLE, {
+  await getLandDb().defineTable(OPS_TABLE, {
     request_id: { type: "TEXT", primary: true },
     operation_type: { type: "TEXT", notNull: true },
     status: { type: "TEXT", notNull: true },
@@ -88,7 +55,7 @@ export function makeId(prefix: string): string {
 }
 
 export async function getLandById(id: string): Promise<LandRow | null> {
-  const row = await db.get(LANDS_TABLE, id);
+  const row = await getLandDb().get(LANDS_TABLE, id);
   return (row as unknown as LandRow | undefined) ?? null;
 }
 
@@ -97,7 +64,7 @@ export async function listLandsByOwner(
   limit = 50,
   offset = 0,
 ): Promise<LandRow[]> {
-  const rows = await db.query(LANDS_TABLE, {
+  const rows = await getLandDb().query(LANDS_TABLE, {
     where: {
       and: [{ eq: ["owner_id", ownerId] }, { ne: ["status", "terminated"] }],
     },
@@ -108,31 +75,26 @@ export async function listLandsByOwner(
   return rows as unknown as LandRow[];
 }
 
-export async function countActiveLandsByOwner(ownerId: string): Promise<number> {
-  const rows = await db.query(LANDS_TABLE, {
-    where: {
-      and: [
-        { eq: ["owner_id", ownerId] },
-        { in: ["status", ["active", "dormant"]] },
-      ],
-    },
-    limit: 1000,
-  });
-  return rows.length;
-}
-
-/** 同维度全部有效（active|dormant）契约，供 AABB 碰撞。 */
-export async function listEffectiveLandsInDimension(dimension: string): Promise<LandRow[]> {
-  const rows = await db.query(LANDS_TABLE, {
-    where: {
-      and: [
-        { eq: ["dimension", dimension] },
-        { in: ["status", ["active", "dormant"]] },
-      ],
-    },
-    limit: 5000,
-  });
-  return rows as unknown as LandRow[];
+/** 同维度全部有效（active|dormant）租赁，供 AABB 碰撞。 */
+export async function listEffectiveLandsInDimension(
+  dimension: string,
+): Promise<LandRow[]> {
+  const lands: LandRow[] = [];
+  for (let offset = 0; ; offset += 500) {
+    const rows = await getLandDb().query(LANDS_TABLE, {
+      where: {
+        and: [
+          { eq: ["dimension", dimension] },
+          { in: ["status", ["active", "dormant"]] },
+        ],
+      },
+      orderBy: { field: "id", dir: "asc" },
+      limit: 500,
+      offset,
+    });
+    lands.push(...(rows as unknown as LandRow[]));
+    if (rows.length < 500) return lands;
+  }
 }
 
 export async function findLandByPos(
@@ -157,103 +119,20 @@ export async function findLandByPos(
   return null;
 }
 
-export async function listMembers(landId: string): Promise<MemberRow[]> {
-  const rows = await db.query(MEMBERS_TABLE, {
-    where: { eq: ["land_id", landId] },
-    limit: 500,
-  });
-  return rows as unknown as MemberRow[];
-}
-
-export async function upsertMember(
-  landId: string,
-  playerId: string,
-  role: MemberRole,
-  permissions: Record<string, boolean>,
-): Promise<void> {
-  const existing = await db.query(MEMBERS_TABLE, {
-    where: {
-      and: [{ eq: ["land_id", landId] }, { eq: ["player_id", playerId] }],
-    },
-    limit: 1,
-  });
-  const payload = {
-    land_id: landId,
-    player_id: playerId,
-    role,
-    permissions_json: JSON.stringify(permissions),
-    updated_at: Date.now(),
-  };
-  if (existing[0]?.id) {
-    await db.update(MEMBERS_TABLE, String(existing[0].id), payload);
-  } else {
-    await db.insert(MEMBERS_TABLE, { id: makeId("lm"), ...payload });
-  }
-}
-
-export async function listPerks(landId: string): Promise<PerkRow[]> {
-  const rows = await db.query(PERKS_TABLE, {
-    where: { eq: ["land_id", landId] },
-    limit: 50,
-  });
-  return rows as unknown as PerkRow[];
-}
-
-export async function setPerkEnabled(
-  landId: string,
-  perkId: PerkId,
-  enabled: boolean,
-  settings: Record<string, unknown> = {},
-): Promise<void> {
-  const existing = await db.query(PERKS_TABLE, {
-    where: {
-      and: [{ eq: ["land_id", landId] }, { eq: ["perk_id", perkId] }],
-    },
-    limit: 1,
-  });
-  const payload = {
-    land_id: landId,
-    perk_id: perkId,
-    enabled: enabled ? 1 : 0,
-    settings_json: JSON.stringify(settings),
-  };
-  if (existing[0]?.id) {
-    await db.update(PERKS_TABLE, String(existing[0].id), payload);
-  } else {
-    await db.insert(PERKS_TABLE, { id: makeId("lp"), ...payload });
-  }
-}
-
-export async function recordOperation(
-  requestId: string,
-  operationType: string,
-  status: string,
-  response: Record<string, unknown>,
-): Promise<void> {
-  await db.insert(OPS_TABLE, {
-    request_id: requestId,
-    operation_type: operationType,
-    status,
-    response_json: JSON.stringify(response),
-    created_at: Date.now(),
-  });
-}
-
 export async function updateLandFields(
   id: string,
   fields: Partial<LandRow>,
 ): Promise<void> {
-  await db.update(LANDS_TABLE, id, { ...fields, updated_at: Date.now() });
-}
-
-export async function insertLand(row: LandRow): Promise<void> {
-  await db.insert(LANDS_TABLE, row as unknown as Record<string, unknown>);
+  await getLandDb().update(LANDS_TABLE, id, {
+    ...fields,
+    updated_at: Date.now(),
+  });
 }
 
 export async function listExpiredActive(now: number): Promise<LandRow[]> {
-  const rows = await db.query(LANDS_TABLE, {
+  const rows = await getLandDb().query(LANDS_TABLE, {
     where: {
-      and: [{ eq: ["status", "active"] }, { lt: ["lease_until", now] }],
+      and: [{ eq: ["status", "active"] }, { lte: ["lease_until", now] }],
     },
     limit: 1000,
   });
@@ -261,15 +140,11 @@ export async function listExpiredActive(now: number): Promise<LandRow[]> {
 }
 
 export async function listGraceExpired(now: number): Promise<LandRow[]> {
-  const rows = await db.query(LANDS_TABLE, {
+  const rows = await getLandDb().query(LANDS_TABLE, {
     where: {
-      and: [{ eq: ["status", "dormant"] }, { lt: ["grace_until", now] }],
+      and: [{ eq: ["status", "dormant"] }, { lte: ["grace_until", now] }],
     },
     limit: 1000,
   });
   return rows as unknown as LandRow[];
-}
-
-export function isProtectingStatus(status: LandStatus): boolean {
-  return status === "active" || status === "dormant";
 }

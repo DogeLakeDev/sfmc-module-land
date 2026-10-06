@@ -2,39 +2,41 @@
   "$schema": "https://cdn.jsdelivr.net/gh/DogeLakeDev/ScriptsForMinecraftServer@main/modules/sdk/@sfmc-sdk/schemas/ui-screen.v1.schema.json",
   "formatVersion": 1,
   "id": "land.home",
-  "name": "领地控制台",
+  "name": "领地",
   "presentation": "menu",
-  "title": "领地租赁控制台",
+  "title": "领地",
   "body": [
     {
       "id": "intro",
       "type": "info",
-      "items": ["只租不卖 · 契约庄园"],
+      "items": ["租用、续租和管理领地。"],
       "tone": "muted"
     },
     {
       "id": "list",
       "type": "button",
-      "label": "我的庄园",
-      "trigger": { "type": "navigate", "to": "land.list" }
+      "label": "我的领地",
+      "trigger": {
+        "type": "navigate",
+        "to": "land.list"
+      }
     },
     {
       "id": "lease",
       "type": "button",
-      "label": "起租向导",
-      "trigger": { "type": "navigate", "to": "land.lease" }
-    },
-    {
-      "id": "teleport",
-      "type": "button",
-      "label": "传送公开地标",
-      "trigger": { "type": "navigate", "to": "land.teleport" }
+      "label": "租用领地",
+      "trigger": {
+        "type": "navigate",
+        "to": "land.lease"
+      }
     },
     {
       "id": "close",
       "type": "button",
       "label": "关闭",
-      "trigger": { "type": "close" }
+      "trigger": {
+        "type": "close"
+      }
     }
   ]
 }

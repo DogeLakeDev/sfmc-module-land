@@ -5,7 +5,13 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
-import { aabbIntersects, blockVolume, footprintBlocks, normalizeAabb, totemBoxFromCore } from "../sapi/src/aabb.ts";
+import {
+  aabbIntersects,
+  blockVolume,
+  footprintBlocks,
+  normalizeAabb,
+  verticalBoxFromCore,
+} from "../sapi/src/aabb.ts";
 import { DEFAULT_LAND_CONFIG, mergeLandConfig } from "../sapi/src/config.ts";
 import {
   calcDailyRent,
@@ -13,10 +19,10 @@ import {
   expansionFeeDiff,
   landCountMultiplier,
   longTermDiscount,
-  mineralToCurrency,
   remainingLeaseDays,
 } from "../sapi/src/rent.ts";
 import { DAY_MS } from "../sapi/src/types.ts";
+import { compileUiProject } from "@sfmc-bds/sdk/validation";
 
 describe("land aabb", () => {
   it("normalizeAabb 纠正对角", () => {
@@ -31,15 +37,21 @@ describe("land aabb", () => {
   });
 
   it("aabbIntersects 边界相贴视为冲突", () => {
-    const a = normalizeAabb({ min: { x: 0, y: 0, z: 0 }, max: { x: 10, y: 10, z: 10 } });
-    const b = normalizeAabb({ min: { x: 10, y: 0, z: 0 }, max: { x: 20, y: 10, z: 10 } });
+    const a = normalizeAabb({
+      min: { x: 0, y: 0, z: 0 },
+      max: { x: 10, y: 10, z: 10 },
+    });
+    const b = normalizeAabb({
+      min: { x: 10, y: 0, z: 0 },
+      max: { x: 20, y: 10, z: 10 },
+    });
     assert.equal(aabbIntersects(a, b), true);
   });
 
-  it("totemBoxFromCore 垂直通天", () => {
-    const box = totemBoxFromCore({ x: 0, y: 64, z: 0 }, 16);
+  it("verticalBoxFromCore 垂直通天", () => {
+    const box = verticalBoxFromCore({ x: 0, y: 64, z: 0 }, 16);
     assert.equal(box.min.y, -64);
-    assert.equal(box.max.y, 320);
+    assert.equal(box.max.y, 319);
     assert.equal(footprintBlocks(box), 33 * 33);
     assert.ok(blockVolume(box) > footprintBlocks(box));
   });
@@ -47,10 +59,22 @@ describe("land aabb", () => {
 
 describe("land rent", () => {
   it("长租折扣取最大适用档", () => {
-    assert.equal(longTermDiscount(7, DEFAULT_LAND_CONFIG.long_term_discounts), 1);
-    assert.equal(longTermDiscount(30, DEFAULT_LAND_CONFIG.long_term_discounts), 0.9);
-    assert.equal(longTermDiscount(90, DEFAULT_LAND_CONFIG.long_term_discounts), 0.8);
-    assert.equal(longTermDiscount(120, DEFAULT_LAND_CONFIG.long_term_discounts), 0.8);
+    assert.equal(
+      longTermDiscount(7, DEFAULT_LAND_CONFIG.long_term_discounts),
+      1,
+    );
+    assert.equal(
+      longTermDiscount(30, DEFAULT_LAND_CONFIG.long_term_discounts),
+      0.9,
+    );
+    assert.equal(
+      longTermDiscount(90, DEFAULT_LAND_CONFIG.long_term_discounts),
+      0.8,
+    );
+    assert.equal(
+      longTermDiscount(120, DEFAULT_LAND_CONFIG.long_term_discounts),
+      0.8,
+    );
   });
 
   it("持有数量倍率", () => {
@@ -63,7 +87,7 @@ describe("land rent", () => {
 
   it("日租金含面积与倍率", () => {
     const cfg = mergeLandConfig();
-    const box = totemBoxFromCore({ x: 0, y: 64, z: 0 }, 16);
+    const box = verticalBoxFromCore({ x: 0, y: 64, z: 0 }, 16);
     const r0 = calcDailyRent(box, cfg, 0);
     const r1 = calcDailyRent(box, cfg, 1);
     assert.ok(r0 >= cfg.base_daily_rent);
@@ -88,23 +112,10 @@ describe("land rent", () => {
     const until = now + 2.9 * DAY_MS;
     assert.equal(remainingLeaseDays(until, now), 2);
   });
-
-  it("矿物折算", () => {
-    assert.equal(mineralToCurrency("minecraft:diamond", 2, DEFAULT_LAND_CONFIG.mineral_rates), 60);
-    assert.equal(mineralToCurrency("minecraft:dirt", 10, DEFAULT_LAND_CONFIG.mineral_rates), 0);
-  });
-});
-
-describe("land identity", () => {
-  it("无永久买断语义：契约必须带 lease_until 字段（规格约束）", () => {
-    // 纯文档级守卫：确保设计常量日毫秒与宽限期默认值仍为只租不卖
-    assert.equal(DAY_MS, 86_400_000);
-    assert.equal(DEFAULT_LAND_CONFIG.grace_period_days, 7);
-  });
 });
 
 describe("land manifest", () => {
-  it("声明式 UI 直接使用 SDK，不再依赖 gui 模块", () => {
+  it("租赁界面不依赖额外 gui 模块", () => {
     const manifest = JSON.parse(
       readFileSync(
         fileURLToPath(new URL("../sapi/manifest.json", import.meta.url)),
@@ -116,7 +127,67 @@ describe("land manifest", () => {
       services: { requires: Array<{ name: string }> };
     };
     assert.ok(!manifest.requires.includes("gui"));
-    assert.ok(!manifest.services.requires.some((item) => item.name.startsWith("gui.")));
-    assert.ok(!manifest.permissions.some((item) => item.startsWith("service:gui.")));
+    assert.ok(
+      !manifest.services.requires.some((item) => item.name.startsWith("gui.")),
+    );
+    assert.ok(
+      !manifest.permissions.some((item) => item.startsWith("service:gui.")),
+    );
+  });
+});
+
+describe("租赁配置与边界", () => {
+  it("缺省配置的嵌套数组不会共享可变引用", () => {
+    const cfg = mergeLandConfig();
+    cfg.claim.level_radius[0] = 99;
+    assert.equal(DEFAULT_LAND_CONFIG.claim.level_radius[0], 16);
+  });
+  it("无效租金、数量和等级配置在启动时拒绝", () => {
+    assert.throws(() => mergeLandConfig({ base_daily_rent: NaN }));
+    assert.throws(() => mergeLandConfig({ max_lands_per_player: -1 }));
+    assert.throws(() =>
+      mergeLandConfig({
+        claim: { initial_radius: 16, max_level: 3, level_radius: [16, 16, 32] },
+      }),
+    );
+  });
+  it("默认范围七天费用为 224，而不是只算基础租金", () => {
+    const box = verticalBoxFromCore({ x: 0, y: 70, z: 0 }, 16);
+    assert.equal(
+      calcPeriodRent(
+        calcDailyRent(box, DEFAULT_LAND_CONFIG, 0),
+        7,
+        DEFAULT_LAND_CONFIG,
+      ),
+      224,
+    );
+  });
+  it("最后半天扩建仍收取按比例计算的补差", () => {
+    assert.equal(expansionFeeDiff(10, 15, 0.5), 3);
+  });
+});
+
+describe("声明式租赁 GUI", () => {
+  it("页面、跳转、动作和服务通过 SDK 的完整工程校验", () => {
+    const read = (path: string) =>
+      JSON.parse(
+        readFileSync(fileURLToPath(new URL(path, import.meta.url)), "utf8"),
+      );
+    const feature = read("../sapi/src/ui/feature.ui.json");
+    const manifest = read("../sapi/manifest.json");
+    const screens = Object.fromEntries(
+      feature.screens.map((screen: { file: string }) => [
+        screen.file,
+        read(`../sapi/src/ui/${screen.file}`),
+      ]),
+    );
+    const result = compileUiProject({
+      feature,
+      screens,
+      services: manifest.services.provides.map(
+        (item: { name: string }) => item.name,
+      ),
+    });
+    assert.equal(result.ok, true, JSON.stringify(result));
   });
 });

@@ -2,20 +2,23 @@
   "$schema": "https://cdn.jsdelivr.net/gh/DogeLakeDev/ScriptsForMinecraftServer@main/modules/sdk/@sfmc-sdk/schemas/ui-screen.v1.schema.json",
   "formatVersion": 1,
   "id": "land.list",
-  "name": "我的庄园",
+  "name": "我的领地",
   "presentation": "menu",
-  "title": "我的庄园",
+  "title": "我的领地",
   "load": {
     "lands": {
       "service": "land.listByOwner",
-      "input": { "ownerId": "{{player.id}}", "limit": 20 }
+      "input": {
+        "ownerId": "{{player.id}}",
+        "limit": 100
+      }
     }
   },
   "body": [
     {
       "id": "count",
       "type": "info",
-      "items": ["名下契约：{{data.lands.lands.length}} 块"]
+      "items": ["名下领地：{{data.lands.lands.length}} 块"]
     },
     {
       "id": "land-list",
@@ -26,11 +29,13 @@
         {
           "id": "land-row",
           "type": "button",
-          "label": "{{land.name}} [{{land.status}}]",
+          "label": "{{land.name}} · {{land.statusText}} · 日租 {{land.dailyRent}}",
           "trigger": {
             "type": "navigate",
             "to": "land.detail",
-            "params": { "landId": "{{land.id}}" }
+            "params": {
+              "landId": "{{land.id}}"
+            }
           }
         }
       ],
@@ -38,22 +43,35 @@
         {
           "id": "empty",
           "type": "info",
-          "items": ["暂无有效契约，请使用起租向导。"],
+          "items": ["暂无领地，使用「租用领地」创建。"],
           "tone": "muted"
         }
       ]
     },
     {
+      "id": "lease",
+      "type": "button",
+      "label": "租用领地",
+      "trigger": {
+        "type": "navigate",
+        "to": "land.lease"
+      }
+    },
+    {
       "id": "refresh",
       "type": "button",
       "label": "刷新",
-      "trigger": { "type": "refresh" }
+      "trigger": {
+        "type": "refresh"
+      }
     },
     {
       "id": "back",
       "type": "button",
       "label": "返回",
-      "trigger": { "type": "back" }
+      "trigger": {
+        "type": "back"
+      }
     }
   ]
 }

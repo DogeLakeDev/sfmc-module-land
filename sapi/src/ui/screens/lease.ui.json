@@ -2,17 +2,49 @@
   "$schema": "https://cdn.jsdelivr.net/gh/DogeLakeDev/ScriptsForMinecraftServer@main/modules/sdk/@sfmc-sdk/schemas/ui-screen.v1.schema.json",
   "formatVersion": 1,
   "id": "land.lease",
-  "name": "起租向导",
-  "presentation": "form",
-  "title": "起租向导",
+  "name": "租用领地",
+  "presentation": "reactive",
+  "title": "租用领地",
   "state": {
-    "name": { "type": "string", "default": "", "maxLength": 32 },
-    "days": { "type": "number", "default": 7, "min": 1, "max": 90, "step": 1 }
+    "name": {
+      "type": "string",
+      "default": "",
+      "maxLength": 32
+    },
+    "days": {
+      "type": "number",
+      "default": 7,
+      "min": 1,
+      "max": 90,
+      "step": 1
+    },
+    "quoteId": {
+      "type": "string",
+      "default": ""
+    },
+    "fee": {
+      "type": "number",
+      "default": 0
+    },
+    "dailyRent": {
+      "type": "number",
+      "default": 0
+    },
+    "quotedDays": {
+      "type": "number",
+      "default": 0
+    },
+    "quotedName": {
+      "type": "string",
+      "default": ""
+    }
   },
   "load": {
     "draft": {
       "service": "land.ui.leaseDraft",
-      "input": { "playerId": "{{player.id}}" }
+      "input": {
+        "playerId": "{{player.id}}"
+      }
     }
   },
   "body": [
@@ -20,15 +52,16 @@
       "id": "mode",
       "type": "info",
       "items": [
-        "模式：{{data.draft.mode}}",
-        "{{data.draft.description}}",
-        "不填写名称时使用：{{data.draft.suggestedName}}"
+        "选地方式：{{data.draft.mode}}",
+        "维度：{{data.draft.dimensionText}}",
+        "范围：{{data.draft.rangeText}}",
+        "{{data.draft.description}}"
       ]
     },
     {
       "id": "name",
       "type": "textField",
-      "label": "庄园名称",
+      "label": "领地名称",
       "bind": "state.name"
     },
     {
@@ -44,29 +77,102 @@
       "id": "preview",
       "type": "button",
       "label": "预览并估价",
-      "trigger": { "type": "action", "action": "preview" }
+      "trigger": {
+        "type": "action",
+        "action": "preview"
+      }
+    },
+    {
+      "id": "quote",
+      "type": "info",
+      "items": [
+        "本次费用：{{state.fee}} · 日租：{{state.dailyRent}}",
+        "先预览取得报价，再确认租用。名称或天数变更后须重新预览。"
+      ]
     },
     {
       "id": "create",
       "type": "button",
-      "label": "确认起租",
+      "label": "确认租用",
       "tone": "primary",
-      "trigger": { "type": "action", "action": "create" }
+      "trigger": {
+        "type": "action",
+        "action": "create"
+      },
+      "disabledWhen": {
+        "op": "or",
+        "args": [
+          {
+            "op": "equals",
+            "args": [
+              {
+                "ref": "state.quoteId"
+              },
+              {
+                "value": ""
+              }
+            ]
+          },
+          {
+            "op": "notEquals",
+            "args": [
+              {
+                "ref": "state.days"
+              },
+              {
+                "ref": "state.quotedDays"
+              }
+            ]
+          },
+          {
+            "op": "notEquals",
+            "args": [
+              {
+                "ref": "state.name"
+              },
+              {
+                "ref": "state.quotedName"
+              }
+            ]
+          }
+        ]
+      }
     },
     {
       "id": "back",
       "type": "button",
       "label": "返回",
-      "trigger": { "type": "back" }
+      "trigger": {
+        "type": "back"
+      }
     }
   ],
   "actions": {
     "preview": {
       "call": {
         "service": "land.ui.previewLease",
-        "input": { "playerId": "{{player.id}}", "days": "{{state.days}}" }
+        "input": {
+          "playerId": "{{player.id}}",
+          "days": "{{state.days}}",
+          "name": "{{state.name}}"
+        }
       },
-      "onSuccess": [{ "effect": "message", "text": "{{result.message}}" }],
+      "onSuccess": [
+        {
+          "effect": "setState",
+          "values": {
+            "quoteId": "{{result.quoteId}}",
+            "fee": "{{result.fee}}",
+            "dailyRent": "{{result.dailyRent}}",
+            "quotedDays": "{{result.days}}",
+            "quotedName": "{{result.quotedName}}"
+          }
+        },
+        {
+          "effect": "message",
+          "text": "{{result.message}}"
+        }
+      ],
       "onError": [
         {
           "effect": "message",
@@ -77,29 +183,36 @@
     },
     "create": {
       "confirm": {
-        "title": "确认起租",
-        "body": "确认按当前范围起租 {{state.days}} 天吗？"
+        "title": "确认租用",
+        "body": "确认租用领地 {{state.days}} 天？费用 {{state.fee}} 货币；费用和范围将再次校验。"
       },
       "call": {
         "service": "land.ui.createLease",
         "input": {
           "playerId": "{{player.id}}",
           "name": "{{state.name}}",
-          "days": "{{state.days}}"
+          "days": "{{state.days}}",
+          "quoteId": "{{state.quoteId}}"
         }
       },
       "onSuccess": [
         {
           "effect": "message",
-          "text": "领地已创建：{{result.landId}}",
+          "text": "领地已创建，费用 {{result.fee}}",
           "tone": "success"
         },
-        { "effect": "replace", "to": "land.list" }
+        {
+          "effect": "replace",
+          "to": "land.detail",
+          "params": {
+            "landId": "{{result.landId}}"
+          }
+        }
       ],
       "onError": [
         {
           "effect": "message",
-          "text": "起租失败：{{result.message}}",
+          "text": "租用失败：{{result.message}}",
           "tone": "danger"
         }
       ]

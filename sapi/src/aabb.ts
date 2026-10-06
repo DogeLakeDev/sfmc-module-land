@@ -65,11 +65,11 @@ export function pointInAabb(p: Vec3, box: Aabb): boolean {
 }
 
 /** 由中心与半径生成竖直通天领地盒。 */
-export function totemBoxFromCore(
+export function verticalBoxFromCore(
   core: Vec3,
   radius: number,
   yMin = -64,
-  yMax = 320,
+  yMax = 319,
 ): Aabb {
   return normalizeAabb({
     min: { x: core.x - radius, y: yMin, z: core.z - radius },

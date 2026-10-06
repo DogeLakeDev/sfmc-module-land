@@ -8,36 +8,9 @@
     "90": 0.8
   },
   "grace_period_days": 7,
-  "default_claim_mode": "vertical",
-  "totem": {
-    "item_type": "minecraft:respawn_anchor",
-    "item_name": "§e§l守护基石 §7[放置即起租]",
+  "claim": {
     "initial_radius": 16,
     "max_level": 5,
     "level_radius": [16, 24, 32, 48, 64]
-  },
-  "mineral_rates": {
-    "minecraft:coal": 0.5,
-    "minecraft:iron_ingot": 2,
-    "minecraft:gold_ingot": 5,
-    "minecraft:emerald": 20,
-    "minecraft:diamond": 30
-  },
-  "plaza": {
-    "name": "自由广场",
-    "welcome": "欢迎来到公共安全广场",
-    "dimension": "minecraft:overworld",
-    "range": [0, 64, 0, 100, 128, 100]
-  },
-  "default_permissions": {
-    "allow_place": true,
-    "allow_destroy": true,
-    "attack_entity": true,
-    "open_container": true,
-    "use_door": true,
-    "use_button": true,
-    "use_redstone": true,
-    "interact_entity": true,
-    "pickup_item": true
   }
 }

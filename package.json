@@ -3,9 +3,9 @@
   "version": "0.2.2",
   "packageManager": "pnpm@10.8.0",
   "type": "module",
-  "description": "SAPI module: 土地租赁契约（只租不卖）与庄园生态",
+  "description": "SFMC 领地模块",
   "license": "ISC",
-  "repository": "git+https://github.com/Tanya7z/sfmc-module-land.git",
+  "repository": "git+https://github.com/DogeLakeDev/sfmc-module-land.git",
   "main": "sapi/src/index.ts",
   "exports": {
     ".": "./sapi/src/index.ts"

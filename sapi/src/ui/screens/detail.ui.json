@@ -2,10 +2,15 @@
   "$schema": "https://cdn.jsdelivr.net/gh/DogeLakeDev/ScriptsForMinecraftServer@main/modules/sdk/@sfmc-sdk/schemas/ui-screen.v1.schema.json",
   "formatVersion": 1,
   "id": "land.detail",
-  "name": "庄园详情",
+  "name": "领地详情",
   "presentation": "reactive",
   "title": "{{data.land.name}}",
-  "params": { "landId": { "type": "string", "required": true } },
+  "params": {
+    "landId": {
+      "type": "string",
+      "required": true
+    }
+  },
   "state": {
     "renewDays": {
       "type": "number",
@@ -20,12 +25,43 @@
       "min": 1,
       "max": 5,
       "step": 1
+    },
+    "renewQuoteId": {
+      "type": "string",
+      "default": ""
+    },
+    "renewFee": {
+      "type": "number",
+      "default": 0
+    },
+    "quotedRenewDays": {
+      "type": "number",
+      "default": 0
+    },
+    "expandQuoteId": {
+      "type": "string",
+      "default": ""
+    },
+    "expandFee": {
+      "type": "number",
+      "default": 0
+    },
+    "newDailyRent": {
+      "type": "number",
+      "default": 0
+    },
+    "quotedExpandLevel": {
+      "type": "number",
+      "default": 0
     }
   },
   "load": {
     "land": {
       "service": "land.ui.detail",
-      "input": { "playerId": "{{player.id}}", "landId": "{{params.landId}}" }
+      "input": {
+        "playerId": "{{player.id}}",
+        "landId": "{{params.landId}}"
+      }
     }
   },
   "body": [
@@ -33,9 +69,11 @@
       "id": "summary",
       "type": "info",
       "items": [
-        "状态：{{data.land.status}} · 日租：{{data.land.dailyRent}}",
-        "到期：{{data.land.leaseUntilText}} · Lv.{{data.land.level}}",
-        "门票：{{data.land.ticketPrice}} · 公开：{{data.land.publicText}}"
+        "状态：{{data.land.statusText}} · 日租：{{data.land.dailyRent}}",
+        "租期到期：{{data.land.leaseUntilText}}",
+        "宽限期至：{{data.land.graceUntilText}}",
+        "等级：{{data.land.level}} / {{data.land.maxLevel}} · 维度：{{data.land.dimensionText}}",
+        "范围：{{data.land.rangeText}}"
       ]
     },
     {
@@ -48,57 +86,173 @@
       "step": 1
     },
     {
+      "id": "preview-renew",
+      "type": "button",
+      "label": "预览续租费用",
+      "trigger": {
+        "type": "action",
+        "action": "previewRenew"
+      }
+    },
+    {
+      "id": "renew-quote",
+      "type": "info",
+      "items": ["续租费用：{{state.renewFee}}"]
+    },
+    {
       "id": "renew",
       "type": "button",
-      "label": "确认续租（节操币）",
+      "label": "确认续租",
       "tone": "primary",
-      "trigger": { "type": "action", "action": "renew" }
+      "trigger": {
+        "type": "action",
+        "action": "renew"
+      },
+      "disabledWhen": {
+        "op": "or",
+        "args": [
+          {
+            "op": "not",
+            "args": [
+              {
+                "ref": "data.land.canRenew"
+              }
+            ]
+          },
+          {
+            "op": "equals",
+            "args": [
+              {
+                "ref": "state.renewQuoteId"
+              },
+              {
+                "value": ""
+              }
+            ]
+          },
+          {
+            "op": "notEquals",
+            "args": [
+              {
+                "ref": "state.renewDays"
+              },
+              {
+                "ref": "state.quotedRenewDays"
+              }
+            ]
+          }
+        ]
+      }
     },
-    { "id": "renew-divider", "type": "divider" },
+    {
+      "id": "renew-divider",
+      "type": "divider"
+    },
     {
       "id": "expand-level",
-      "type": "slider",
+      "type": "dropdown",
       "label": "扩建等级",
       "bind": "state.expandLevel",
-      "min": 1,
-      "max": 5,
-      "step": 1
+      "options": {
+        "source": "data.land.expandLevels",
+        "as": "level",
+        "value": "{{level.value}}",
+        "label": "{{level.label}}"
+      },
+      "disabledWhen": {
+        "op": "not",
+        "args": [
+          {
+            "ref": "data.land.canExpand"
+          }
+        ]
+      }
     },
     {
       "id": "preview-expand",
       "type": "button",
-      "label": "预览扩建线框",
-      "trigger": { "type": "action", "action": "previewExpand" }
+      "label": "预览扩建并报价",
+      "trigger": {
+        "type": "action",
+        "action": "previewExpand"
+      },
+      "disabledWhen": {
+        "op": "not",
+        "args": [
+          {
+            "ref": "data.land.canExpand"
+          }
+        ]
+      }
+    },
+    {
+      "id": "expand-quote",
+      "type": "info",
+      "items": [
+        "扩建补差：{{state.expandFee}} · 新日租：{{state.newDailyRent}}"
+      ]
     },
     {
       "id": "expand",
       "type": "button",
       "label": "确认扩建",
-      "trigger": { "type": "action", "action": "expand" }
-    },
-    { "id": "perks-divider", "type": "divider" },
-    {
-      "id": "perks",
-      "type": "button",
-      "label": "增益插槽",
       "trigger": {
-        "type": "navigate",
-        "to": "land.perks",
-        "params": { "landId": "{{params.landId}}" }
+        "type": "action",
+        "action": "expand"
+      },
+      "disabledWhen": {
+        "op": "or",
+        "args": [
+          {
+            "op": "not",
+            "args": [
+              {
+                "ref": "data.land.canExpand"
+              }
+            ]
+          },
+          {
+            "op": "equals",
+            "args": [
+              {
+                "ref": "state.expandQuoteId"
+              },
+              {
+                "value": ""
+              }
+            ]
+          },
+          {
+            "op": "notEquals",
+            "args": [
+              {
+                "ref": "state.expandLevel"
+              },
+              {
+                "ref": "state.quotedExpandLevel"
+              }
+            ]
+          }
+        ]
       }
     },
     {
       "id": "terminate",
       "type": "button",
-      "label": "解除契约",
+      "label": "解除租赁",
       "tone": "danger",
-      "trigger": { "type": "action", "action": "terminate" }
+      "trigger": {
+        "type": "action",
+        "action": "terminate"
+      }
     },
     {
       "id": "back",
       "type": "button",
       "label": "返回",
-      "trigger": { "type": "back" }
+      "trigger": {
+        "type": "back"
+      }
     }
   ],
   "actions": {
@@ -108,12 +262,26 @@
         "input": {
           "playerId": "{{player.id}}",
           "landId": "{{params.landId}}",
-          "days": "{{state.renewDays}}"
+          "days": "{{state.renewDays}}",
+          "quoteId": "{{state.renewQuoteId}}"
         }
       },
       "onSuccess": [
-        { "effect": "message", "text": "续租成功", "tone": "success" },
-        { "effect": "refresh" }
+        {
+          "effect": "setState",
+          "values": {
+            "renewQuoteId": "",
+            "expandQuoteId": ""
+          }
+        },
+        {
+          "effect": "message",
+          "text": "续租成功",
+          "tone": "success"
+        },
+        {
+          "effect": "refresh"
+        }
       ],
       "onError": [
         {
@@ -121,7 +289,11 @@
           "text": "续租失败：{{result.message}}",
           "tone": "danger"
         }
-      ]
+      ],
+      "confirm": {
+        "title": "确认续租",
+        "body": "为「{{data.land.name}}」续租 {{state.renewDays}} 天，费用 {{state.renewFee}} 货币。"
+      }
     },
     "previewExpand": {
       "call": {
@@ -132,7 +304,21 @@
           "level": "{{state.expandLevel}}"
         }
       },
-      "onSuccess": [{ "effect": "message", "text": "{{result.message}}" }],
+      "onSuccess": [
+        {
+          "effect": "setState",
+          "values": {
+            "expandQuoteId": "{{result.quoteId}}",
+            "expandFee": "{{result.fee}}",
+            "newDailyRent": "{{result.dailyRent}}",
+            "quotedExpandLevel": "{{result.level}}"
+          }
+        },
+        {
+          "effect": "message",
+          "text": "{{result.message}}"
+        }
+      ],
       "onError": [
         {
           "effect": "message",
@@ -144,23 +330,33 @@
     "expand": {
       "confirm": {
         "title": "确认扩建",
-        "body": "确认扩建至所选等级并支付补差吗？"
+        "body": "将「{{data.land.name}}」扩建至 {{state.expandLevel}} 级，补差 {{state.expandFee}} 货币，新日租 {{state.newDailyRent}}。"
       },
       "call": {
         "service": "land.ui.expand",
         "input": {
           "playerId": "{{player.id}}",
           "landId": "{{params.landId}}",
-          "level": "{{state.expandLevel}}"
+          "level": "{{state.expandLevel}}",
+          "quoteId": "{{state.expandQuoteId}}"
         }
       },
       "onSuccess": [
+        {
+          "effect": "setState",
+          "values": {
+            "renewQuoteId": "",
+            "expandQuoteId": ""
+          }
+        },
         {
           "effect": "message",
           "text": "扩建成功，补差 {{result.feeDiff}}",
           "tone": "success"
         },
-        { "effect": "refresh" }
+        {
+          "effect": "refresh"
+        }
       ],
       "onError": [
         {
@@ -172,23 +368,65 @@
     },
     "terminate": {
       "confirm": {
-        "title": "解除契约",
-        "body": "确认解除？建筑保护将立即失效。",
+        "title": "解除租赁",
+        "body": "确认解除「{{data.land.name}}」的租赁？剩余租金不退还，范围立即释放。",
         "confirmText": "确认解除",
         "danger": true
       },
       "call": {
         "service": "land.ui.terminate",
-        "input": { "playerId": "{{player.id}}", "landId": "{{params.landId}}" }
+        "input": {
+          "playerId": "{{player.id}}",
+          "landId": "{{params.landId}}",
+          "requestId": "{{data.land.terminateRequestId}}"
+        }
       },
       "onSuccess": [
-        { "effect": "message", "text": "契约已解除", "tone": "success" },
-        { "effect": "replace", "to": "land.list" }
+        {
+          "effect": "message",
+          "text": "租赁已解除",
+          "tone": "success"
+        },
+        {
+          "effect": "replace",
+          "to": "land.list"
+        }
       ],
       "onError": [
         {
           "effect": "message",
           "text": "解除失败：{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    },
+    "previewRenew": {
+      "call": {
+        "service": "land.ui.previewRenew",
+        "input": {
+          "playerId": "{{player.id}}",
+          "landId": "{{params.landId}}",
+          "days": "{{state.renewDays}}"
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "setState",
+          "values": {
+            "renewQuoteId": "{{result.quoteId}}",
+            "renewFee": "{{result.fee}}",
+            "quotedRenewDays": "{{result.days}}"
+          }
+        },
+        {
+          "effect": "message",
+          "text": "{{result.message}}"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "预览失败：{{result.message}}",
           "tone": "danger"
         }
       ]
