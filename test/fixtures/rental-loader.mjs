@@ -17,7 +17,7 @@ export async function resolve(specifier, context, nextResolve) {
   ) {
     const target = new URL(specifier.slice(0, -3) + ".ts", context.parentURL);
     if (existsSync(fileURLToPath(target)))
-      return { url: target.href, shortCircuit: true };
+      return nextResolve(target.href, context);
   }
   return nextResolve(specifier, context);
 }
