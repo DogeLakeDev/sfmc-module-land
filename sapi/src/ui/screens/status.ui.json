@@ -1,0 +1,47 @@
+{
+  "$schema": "https://cdn.jsdelivr.net/gh/DogeLakeDev/ScriptsForMinecraftServer@main/modules/sdk/@sfmc-sdk/schemas/ui-screen.v1.schema.json",
+  "formatVersion": 1,
+  "presentation": "menu",
+  "params": {
+    "landId": {
+      "type": "string",
+      "required": true
+    }
+  },
+  "load": {
+    "land": {
+      "service": "land.ui.detail",
+      "input": {
+        "playerId": "{{player.id}}",
+        "landId": "{{params.landId}}"
+      }
+    }
+  },
+  "id": "land.status",
+  "name": "领地状态",
+  "title": "{{data.land.name}} · 状态",
+  "body": [
+    {
+      "id": "summary",
+      "type": "info",
+      "items": [
+        "状态：{{data.land.statusText}}",
+        "形状：{{data.land.shapeText}}",
+        "体积：{{data.land.volume}} 方块 · 日租：{{data.land.dailyRent}}",
+        "等级：{{data.land.level}} / {{data.land.maxLevel}}",
+        "维度：{{data.land.dimensionText}}",
+        "范围：{{data.land.rangeText}}",
+        "租期到期：{{data.land.leaseUntilText}}",
+        "宽限期至：{{data.land.graceUntilText}}"
+      ]
+    },
+    {
+      "id": "back",
+      "type": "button",
+      "label": "返回管理",
+      "trigger": {
+        "type": "back"
+      }
+    }
+  ]
+}

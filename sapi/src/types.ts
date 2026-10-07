@@ -15,11 +15,17 @@ export interface Aabb {
   max: Vec3;
 }
 
+/** 方块坐标范围，含端点；圆柱体沿 Y 轴。 */
+export type LandShape = Aabb &
+  ({ type: "cuboid" } | { type: "cylinder"; radius: number });
+
 export interface LandRow {
   id: string;
   owner_id: string;
   name: string;
   dimension: string;
+  shape_type: LandShape["type"];
+  radius: number;
   min_x: number;
   min_y: number;
   min_z: number;

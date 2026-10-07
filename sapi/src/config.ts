@@ -11,6 +11,7 @@ export interface LandConfig {
   grace_period_days: number;
   claim: {
     initial_radius: number;
+    initial_height: number;
     max_level: number;
     level_radius: number[];
   };
@@ -28,6 +29,7 @@ export const DEFAULT_LAND_CONFIG: LandConfig = {
   grace_period_days: 7,
   claim: {
     initial_radius: 16,
+    initial_height: 16,
     max_level: 5,
     level_radius: [16, 24, 32, 48, 64],
   },
@@ -50,6 +52,9 @@ export function mergeLandConfig(
       initial_radius:
         partial?.claim?.initial_radius ??
         DEFAULT_LAND_CONFIG.claim.initial_radius,
+      initial_height:
+        partial?.claim?.initial_height ??
+        DEFAULT_LAND_CONFIG.claim.initial_height,
       max_level:
         partial?.claim?.max_level ?? DEFAULT_LAND_CONFIG.claim.max_level,
       level_radius: [
@@ -75,6 +80,7 @@ export function mergeLandConfig(
     ["grace_period_days", merged.grace_period_days, 0],
     ["max_level", merged.claim.max_level, 1],
     ["initial_radius", merged.claim.initial_radius, 1],
+    ["initial_height", merged.claim.initial_height, 1],
   ] as const) {
     if (!Number.isSafeInteger(value) || value < min)
       throw new Error(`${name} 配置无效`);
@@ -89,10 +95,13 @@ export function mergeLandConfig(
     if (
       !Number.isSafeInteger(radius) ||
       radius < 1 ||
+      radius > 512 ||
       (i > 0 && radius <= merged.claim.level_radius[i - 1]!)
     )
-      throw new Error("等级半径须为递增的正整数");
+      throw new Error("等级半径须为 1 至 512 的递增整数");
   }
+  if (merged.claim.initial_height > 128)
+    throw new Error("初始高度不能超过 128");
   if (
     merged.claim.initial_radius >
     merged.claim.level_radius[merged.claim.max_level - 1]!

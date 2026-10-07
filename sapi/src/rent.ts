@@ -1,16 +1,17 @@
 /**
- * 日租金、长租折扣与扩建补差（纯逻辑）。
+ * 三维体积日租金、长租折扣与扩建补差（纯逻辑）。
  */
 
-import { footprintBlocks } from "./aabb.js";
+import { shapeVolume } from "./geometry.js";
 import type { LandConfig } from "./config.js";
-import { DAY_MS, type Aabb } from "./types.js";
+import { DAY_MS, type LandShape } from "./types.js";
 
-/** 按占地面积计算基础日租金（未乘持有数量倍率）。 */
-export function calcBaseDailyRent(box: Aabb, cfg: LandConfig): number {
-  const blocks = footprintBlocks(box);
-  const areaFee = Math.ceil((blocks / 100) * cfg.rent_per_100_blocks);
-  return Math.max(1, Math.ceil(cfg.base_daily_rent + areaFee));
+/** 按实际占用方块体积计算基础日租金（未乘持有数量倍率）。 */
+export function calcBaseDailyRent(shape: LandShape, cfg: LandConfig): number {
+  const volumeFee = Math.ceil(
+    (shapeVolume(shape) / 100) * cfg.rent_per_100_blocks,
+  );
+  return Math.max(1, Math.ceil(cfg.base_daily_rent + volumeFee));
 }
 
 /**
@@ -27,11 +28,11 @@ export function landCountMultiplier(
 }
 
 export function calcDailyRent(
-  box: Aabb,
+  shape: LandShape,
   cfg: LandConfig,
   existingLandCount: number,
 ): number {
-  const base = calcBaseDailyRent(box, cfg);
+  const base = calcBaseDailyRent(shape, cfg);
   const mult = landCountMultiplier(
     existingLandCount,
     cfg.land_count_multiplier,

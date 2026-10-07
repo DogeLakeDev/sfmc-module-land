@@ -3,8 +3,9 @@
  */
 
 import { getLandDb } from "./clients.js";
-import type { Aabb } from "./types.js";
+import type { Aabb, LandShape } from "./types.js";
 import type { LandRow } from "./types.js";
+import { pointInShape } from "./geometry.js";
 
 export const LANDS_TABLE = "sfmc_lands";
 export const OPS_TABLE = "sfmc_land_operations";
@@ -15,6 +16,8 @@ export async function defineLandTables(): Promise<void> {
     owner_id: { type: "TEXT", notNull: true, index: true },
     name: { type: "TEXT", default: "" },
     dimension: { type: "TEXT", notNull: true, index: true },
+    shape_type: { type: "TEXT", notNull: true },
+    radius: { type: "INTEGER", notNull: true, default: 0 },
     min_x: { type: "REAL", notNull: true },
     min_y: { type: "REAL", notNull: true },
     min_z: { type: "REAL", notNull: true },
@@ -50,6 +53,13 @@ export function landToAabb(row: LandRow): Aabb {
   };
 }
 
+export function landToShape(row: LandRow): LandShape {
+  const box = landToAabb(row);
+  return row.shape_type === "cylinder"
+    ? { type: "cylinder", ...box, radius: row.radius }
+    : { type: "cuboid", ...box };
+}
+
 export function makeId(prefix: string): string {
   return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
 }
@@ -75,7 +85,7 @@ export async function listLandsByOwner(
   return rows as unknown as LandRow[];
 }
 
-/** 同维度全部有效（active|dormant）租赁，供 AABB 碰撞。 */
+/** 同维度全部有效（active|dormant）租赁，供三维形状碰撞。 */
 export async function listEffectiveLandsInDimension(
   dimension: string,
 ): Promise<LandRow[]> {
@@ -105,14 +115,7 @@ export async function findLandByPos(
 ): Promise<LandRow | null> {
   const lands = await listEffectiveLandsInDimension(dimension);
   for (const land of lands) {
-    if (
-      x >= land.min_x &&
-      x <= land.max_x &&
-      y >= land.min_y &&
-      y <= land.max_y &&
-      z >= land.min_z &&
-      z <= land.max_z
-    ) {
+    if (pointInShape({ x, y, z }, landToShape(land))) {
       return land;
     }
   }

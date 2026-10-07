@@ -10,6 +10,7 @@
   "grace_period_days": 7,
   "claim": {
     "initial_radius": 16,
+    "initial_height": 16,
     "max_level": 5,
     "level_radius": [16, 24, 32, 48, 64]
   }

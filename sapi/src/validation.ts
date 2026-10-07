@@ -5,14 +5,8 @@ import type { Aabb, LandRow, LandStatus, Vec3 } from "./types.js";
 import type { LandConfig } from "./config.js";
 import { DAY_MS } from "./types.js";
 
-export const DIMENSIONS: Record<
-  string,
-  { name: string; minY: number; maxY: number }
-> = {
-  "minecraft:overworld": { name: "主世界", minY: -64, maxY: 319 },
-  "minecraft:nether": { name: "下界", minY: 0, maxY: 127 },
-  "minecraft:the_end": { name: "末地", minY: 0, maxY: 255 },
-};
+import { DIMENSIONS } from "./dimensions.js";
+export { DIMENSIONS } from "./dimensions.js";
 export function invalid(message: string): never {
   throw new ServiceError(message, "invalid_argument", 400);
 }
@@ -35,7 +29,7 @@ export function landName(value: unknown, fallback: string): string {
     invalid("领地名称须为文本");
   const name =
     typeof value === "string" && value.trim() ? value.trim() : fallback;
-  if ([...name].length > 32 || /[\u0000-\u001f\u007f§]/u.test(name))
+  if (!name || [...name].length > 32 || /[\u0000-\u001f\u007f§]/u.test(name))
     invalid("领地名称须为 1 至 32 个字符，不能包含控制符或格式代码");
   return name;
 }

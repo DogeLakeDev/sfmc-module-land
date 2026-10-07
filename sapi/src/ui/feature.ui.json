@@ -31,6 +31,14 @@
     {
       "id": "land.lease",
       "file": "screens/lease.ui.json"
+    },
+    {
+      "id": "land.status",
+      "file": "screens/status.ui.json"
+    },
+    {
+      "id": "land.rename",
+      "file": "screens/rename.ui.json"
     }
   ]
 }

@@ -12,13 +12,6 @@
     }
   },
   "state": {
-    "renewDays": {
-      "type": "number",
-      "default": 7,
-      "min": 1,
-      "max": 90,
-      "step": 1
-    },
     "expandLevel": {
       "type": "number",
       "default": 1,
@@ -31,10 +24,6 @@
       "default": ""
     },
     "renewFee": {
-      "type": "number",
-      "default": 0
-    },
-    "quotedRenewDays": {
       "type": "number",
       "default": 0
     },
@@ -53,6 +42,27 @@
     "quotedExpandLevel": {
       "type": "number",
       "default": 0
+    },
+    "daysOption": {
+      "type": "number",
+      "default": 7
+    },
+    "customDays": {
+      "type": "string",
+      "default": "7",
+      "maxLength": 3
+    },
+    "quotedDaysOption": {
+      "type": "number",
+      "default": -1
+    },
+    "quotedCustomDays": {
+      "type": "string",
+      "default": ""
+    },
+    "quotedRenewDays": {
+      "type": "number",
+      "default": 0
     }
   },
   "load": {
@@ -66,24 +76,82 @@
   },
   "body": [
     {
-      "id": "summary",
-      "type": "info",
-      "items": [
-        "状态：{{data.land.statusText}} · 日租：{{data.land.dailyRent}}",
-        "租期到期：{{data.land.leaseUntilText}}",
-        "宽限期至：{{data.land.graceUntilText}}",
-        "等级：{{data.land.level}} / {{data.land.maxLevel}} · 维度：{{data.land.dimensionText}}",
-        "范围：{{data.land.rangeText}}"
+      "id": "status",
+      "type": "button",
+      "label": "状态 · {{data.land.statusText}}",
+      "trigger": {
+        "type": "navigate",
+        "to": "land.status",
+        "params": {
+          "landId": "{{params.landId}}"
+        }
+      }
+    },
+    {
+      "id": "rename",
+      "type": "button",
+      "label": "修改名称",
+      "disabledWhen": {
+        "op": "not",
+        "args": [
+          {
+            "ref": "data.land.canRename"
+          }
+        ]
+      },
+      "trigger": {
+        "type": "navigate",
+        "to": "land.rename",
+        "params": {
+          "landId": "{{params.landId}}"
+        }
+      }
+    },
+    {
+      "id": "daysOption",
+      "type": "dropdown",
+      "label": "续租租期",
+      "bind": "state.daysOption",
+      "options": [
+        {
+          "label": "7 天",
+          "value": 7
+        },
+        {
+          "label": "14 天",
+          "value": 14
+        },
+        {
+          "label": "30 天",
+          "value": 30
+        },
+        {
+          "label": "90 天",
+          "value": 90
+        },
+        {
+          "label": "自定义",
+          "value": 0
+        }
       ]
     },
     {
-      "id": "renew-days",
-      "type": "slider",
-      "label": "续租天数",
-      "bind": "state.renewDays",
-      "min": 1,
-      "max": 90,
-      "step": 1
+      "id": "customDays",
+      "type": "textField",
+      "label": "自定义续租天数（1～90）",
+      "bind": "state.customDays",
+      "placeholder": "7",
+      "visibleWhen": {
+        "op": "equals",
+        "args": [
+          {
+            "ref": "state.daysOption"
+          },
+          {
+            "value": 0
+          }
+        ]
+      }
     },
     {
       "id": "preview-renew",
@@ -92,6 +160,14 @@
       "trigger": {
         "type": "action",
         "action": "previewRenew"
+      },
+      "disabledWhen": {
+        "op": "not",
+        "args": [
+          {
+            "ref": "data.land.canRenew"
+          }
+        ]
       }
     },
     {
@@ -134,10 +210,21 @@
             "op": "notEquals",
             "args": [
               {
-                "ref": "state.renewDays"
+                "ref": "state.daysOption"
               },
               {
-                "ref": "state.quotedRenewDays"
+                "ref": "state.quotedDaysOption"
+              }
+            ]
+          },
+          {
+            "op": "notEquals",
+            "args": [
+              {
+                "ref": "state.customDays"
+              },
+              {
+                "ref": "state.quotedCustomDays"
               }
             ]
           }
@@ -262,8 +349,9 @@
         "input": {
           "playerId": "{{player.id}}",
           "landId": "{{params.landId}}",
-          "days": "{{state.renewDays}}",
-          "quoteId": "{{state.renewQuoteId}}"
+          "quoteId": "{{state.renewQuoteId}}",
+          "daysOption": "{{state.daysOption}}",
+          "customDays": "{{state.customDays}}"
         }
       },
       "onSuccess": [
@@ -292,7 +380,7 @@
       ],
       "confirm": {
         "title": "确认续租",
-        "body": "为「{{data.land.name}}」续租 {{state.renewDays}} 天，费用 {{state.renewFee}} 货币。"
+        "body": "为「{{data.land.name}}」续租 {{state.quotedRenewDays}} 天，费用 {{state.renewFee}} 货币。"
       }
     },
     "previewExpand": {
@@ -406,7 +494,8 @@
         "input": {
           "playerId": "{{player.id}}",
           "landId": "{{params.landId}}",
-          "days": "{{state.renewDays}}"
+          "daysOption": "{{state.daysOption}}",
+          "customDays": "{{state.customDays}}"
         }
       },
       "onSuccess": [
@@ -415,7 +504,9 @@
           "values": {
             "renewQuoteId": "{{result.quoteId}}",
             "renewFee": "{{result.fee}}",
-            "quotedRenewDays": "{{result.days}}"
+            "quotedRenewDays": "{{result.days}}",
+            "quotedDaysOption": "{{result.quotedDaysOption}}",
+            "quotedCustomDays": "{{result.quotedCustomDays}}"
           }
         },
         {

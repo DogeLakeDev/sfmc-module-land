@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 export async function resolve(specifier, context, nextResolve) {
   if (
     specifier === "@minecraft/server" ||
+    specifier === "@minecraft/debug-utilities" ||
     specifier.startsWith("@sfmc-bds/sdk/")
   ) {
     return {

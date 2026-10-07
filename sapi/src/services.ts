@@ -1,6 +1,14 @@
+import { parseShape } from "./shape-validation.js";
 /** land.* 租赁服务。所有写操作校验主人，并使用可重放的请求标识。 */
 import { ServiceError } from "@sfmc-bds/sdk/sapi/service";
-import { aabbIntersects, verticalBoxFromCore } from "./aabb.js";
+import {
+  defaultShape,
+  shapeCenter,
+  shapeContains,
+  shapesIntersect,
+  shapeText,
+  shapeVolume,
+} from "./geometry.js";
 import type { LandConfig } from "./config.js";
 import { activityQuery, activityRecord } from "./platform.js";
 import {
@@ -13,6 +21,7 @@ import {
   findLandByPos,
   getLandById,
   landToAabb,
+  landToShape,
   listLandsByOwner,
   listEffectiveLandsInDimension,
   makeId,
@@ -23,9 +32,8 @@ import {
   replayOperation,
   serializeLandMutation,
 } from "./mutations.js";
-import { DAY_MS, type Aabb, type LandRow } from "./types.js";
+import { DAY_MS, type LandShape, type LandRow } from "./types.js";
 import {
-  DIMENSIONS,
   dimensionId,
   invalid,
   landName,
@@ -33,7 +41,6 @@ import {
   leaseState,
   statusText,
   textId,
-  validateBox,
   vector,
 } from "./validation.js";
 import { clearShapes } from "./debug-draw.js";
@@ -51,6 +58,9 @@ export function rowToPublic(land: LandRow): Record<string, unknown> {
     ownerId: land.owner_id,
     name: land.name,
     dimension: land.dimension,
+    shape: landToShape(land),
+    shapeText: shapeText(landToShape(land)),
+    volume: shapeVolume(landToShape(land)),
     min: landToAabb(land).min,
     max: landToAabb(land).max,
     core: { x: land.core_x, y: land.core_y, z: land.core_z },
@@ -120,7 +130,7 @@ async function countEffectiveLands(ownerId: string): Promise<number> {
 }
 async function checkConflict(
   dimension: string,
-  box: Aabb,
+  shape: LandShape,
   exclude?: string,
 ): Promise<string | undefined> {
   const lands = await listEffectiveLandsInDimension(dimension);
@@ -128,16 +138,16 @@ async function checkConflict(
     if (
       land.id !== exclude &&
       leaseState(land, getConfig()) !== "terminated" &&
-      aabbIntersects(box, landToAabb(land))
+      shapesIntersect(shape, landToShape(land))
     )
       return land.id;
   return undefined;
 }
-export async function handleValidateBox(
+export async function handleValidateShape(
   input: Record<string, unknown>,
 ): Promise<{ valid: boolean; dailyRent: number; conflict?: string }> {
   const dimension = dimensionId(input.dimension);
-  const box = validateBox(input.min, input.max, dimension, getConfig());
+  const shape = parseShape(input.shape, dimension, getConfig());
   const exclude =
     typeof input.excludeLandId === "string" ? input.excludeLandId : undefined;
   const ownerId = textId(input.ownerId, "ownerId");
@@ -145,10 +155,10 @@ export async function handleValidateBox(
     0,
     (await countEffectiveLands(ownerId)) - (exclude ? 1 : 0),
   );
-  const conflict = await checkConflict(dimension, box, exclude);
+  const conflict = await checkConflict(dimension, shape, exclude);
   return {
     valid: !conflict,
-    dailyRent: calcDailyRent(box, getConfig(), count),
+    dailyRent: calcDailyRent(shape, getConfig(), count),
     ...(conflict ? { conflict } : {}),
   };
 }
@@ -159,22 +169,16 @@ export async function quoteCreateLease(input: Record<string, unknown>) {
   const cfg = getConfig();
   if ((await countEffectiveLands(ownerId)) >= cfg.max_lands_per_player)
     throw new ServiceError("已达个人领地上限", "land_limit", 409);
-  let box: Aabb;
-  if (input.core && input.min === undefined && input.max === undefined) {
-    const core = vector(input.core),
-      bounds = DIMENSIONS[dimension]!;
-    const raw = verticalBoxFromCore(
-      core,
-      cfg.claim.initial_radius,
-      bounds.minY,
-      bounds.maxY,
-    );
-    box = validateBox(raw.min, raw.max, dimension, cfg);
-  } else box = validateBox(input.min, input.max, dimension, cfg);
-  const validated = await handleValidateBox({
+  const shape = input.shape
+    ? parseShape(input.shape, dimension, cfg)
+    : parseShape(
+        defaultShape(vector(input.core), dimension, cfg),
+        dimension,
+        cfg,
+      );
+  const validated = await handleValidateShape({
     dimension,
-    min: box.min,
-    max: box.max,
+    shape,
     ownerId,
   });
   if (!validated.valid)
@@ -183,26 +187,12 @@ export async function quoteCreateLease(input: Record<string, unknown>) {
       "land_conflict",
       409,
     );
-  const core = input.core
-    ? vector(input.core)
-    : {
-        x: Math.floor((box.min.x + box.max.x) / 2),
-        y: Math.floor((box.min.y + box.max.y) / 2),
-        z: Math.floor((box.min.z + box.max.z) / 2),
-      };
-  if (
-    ["x", "y", "z"].some((axis) => {
-      const a = axis as keyof Aabb["min"];
-      return core[a] < box.min[a] || core[a] > box.max[a];
-    })
-  )
-    invalid("领地核心须位于范围内");
+  const core = vector(shapeCenter(shape));
   return {
     ownerId,
     dimension,
     days,
-    name: landName(input.name, "未命名领地"),
-    box,
+    shape,
     core,
     dailyRent: validated.dailyRent,
     fee: calcPeriodRent(validated.dailyRent, days, cfg),
@@ -227,25 +217,15 @@ export async function quoteExpandLease(input: Record<string, unknown>) {
       "lease_inactive",
       409,
     );
-  const box = validateBox(
-      input.newMin,
-      input.newMax,
-      land.dimension,
-      getConfig(),
-    ),
-    old = landToAabb(land);
-  if (
-    ["x", "y", "z"].some((axis) => {
-      const a = axis as keyof Aabb["min"];
-      return box.min[a] > old.min[a] || box.max[a] < old.max[a];
-    })
-  )
+  const shape = parseShape(input.shape, land.dimension, getConfig()),
+    old = landToShape(land);
+  if (shape.type !== old.type) invalid("已租用的领地不能更换形状");
+  if (!shapeContains(shape, old))
     invalid("扩建范围须包含原领地，不能移动或缩小范围");
-  if (JSON.stringify(box) === JSON.stringify(old)) invalid("扩建范围未增加");
-  const validated = await handleValidateBox({
+  if (shapeVolume(shape) <= shapeVolume(old)) invalid("扩建范围未增加");
+  const validated = await handleValidateShape({
     dimension: land.dimension,
-    min: box.min,
-    max: box.max,
+    shape,
     excludeLandId: land.id,
     ownerId: land.owner_id,
   });
@@ -258,7 +238,7 @@ export async function quoteExpandLease(input: Record<string, unknown>) {
   const dailyRent = Math.max(land.daily_rent, validated.dailyRent);
   const remaining = Math.max(0, (land.lease_until - Date.now()) / DAY_MS);
   const fee = expansionFeeDiff(land.daily_rent, dailyRent, remaining);
-  return { land, box, dailyRent, fee, level: inferLevel(box) };
+  return { land, shape, dailyRent, fee, level: inferLevel(shape) };
 }
 function checkPrice(input: Record<string, unknown>, fee: number): void {
   if (
@@ -295,6 +275,7 @@ export function handleCreateLease(input: Record<string, unknown>) {
     const quote = await quoteCreateLease(input);
     checkPrice(input, quote.fee);
     const landId = makeId("land");
+    const name = `领地-${new Date().toISOString().slice(0, 10).replaceAll("-", "")}-${landId.split("_").at(-1)!.toUpperCase()}`;
     const result = await commitLandOperation(
       input,
       "create",
@@ -307,18 +288,20 @@ export function handleCreateLease(input: Record<string, unknown>) {
         const row: LandRow = {
           id: landId,
           owner_id: ownerId,
-          name: quote.name,
+          name,
           dimension: quote.dimension,
-          min_x: quote.box.min.x,
-          min_y: quote.box.min.y,
-          min_z: quote.box.min.z,
-          max_x: quote.box.max.x,
-          max_y: quote.box.max.y,
-          max_z: quote.box.max.z,
+          shape_type: quote.shape.type,
+          radius: quote.shape.type === "cylinder" ? quote.shape.radius : 0,
+          min_x: quote.shape.min.x,
+          min_y: quote.shape.min.y,
+          min_z: quote.shape.min.z,
+          max_x: quote.shape.max.x,
+          max_y: quote.shape.max.y,
+          max_z: quote.shape.max.z,
           core_x: quote.core.x,
           core_y: quote.core.y,
           core_z: quote.core.z,
-          level: inferLevel(quote.box),
+          level: inferLevel(quote.shape),
           status: "active",
           daily_rent: quote.dailyRent,
           lease_until: leaseUntil,
@@ -328,7 +311,7 @@ export function handleCreateLease(input: Record<string, unknown>) {
           updated_at: now,
         };
         await tx.insert(LANDS_TABLE, row as unknown as Record<string, unknown>);
-        return { ok: true, landId, leaseUntil, fee: quote.fee };
+        return { ok: true, landId, name, leaseUntil, fee: quote.fee };
       },
     );
     await afterMutation(landId, "land.lease.created", ownerId, {
@@ -380,12 +363,13 @@ export function handleExpandLease(input: Record<string, unknown>) {
       quote.land.id,
       async (tx) => {
         await tx.update(LANDS_TABLE, quote.land.id, {
-          min_x: quote.box.min.x,
-          min_y: quote.box.min.y,
-          min_z: quote.box.min.z,
-          max_x: quote.box.max.x,
-          max_y: quote.box.max.y,
-          max_z: quote.box.max.z,
+          min_x: quote.shape.min.x,
+          min_y: quote.shape.min.y,
+          min_z: quote.shape.min.z,
+          max_x: quote.shape.max.x,
+          max_y: quote.shape.max.y,
+          max_z: quote.shape.max.z,
+          radius: quote.shape.type === "cylinder" ? quote.shape.radius : 0,
           daily_rent: quote.dailyRent,
           level: quote.level,
           version: quote.land.version + 1,
@@ -431,6 +415,31 @@ export function handleTerminateLease(input: Record<string, unknown>) {
     return result;
   });
 }
+export function handleRename(input: Record<string, unknown>) {
+  return writeOperation("rename", input, async (ownerId) => {
+    const land = await ownedLand(input);
+    if (leaseState(land, getConfig()) === "terminated")
+      throw new ServiceError("租赁已结束，不能改名", "lease_ended", 409);
+    const name = landName(input.name, "");
+    const result = await commitLandOperation(
+      input,
+      "rename",
+      ownerId,
+      0,
+      land.id,
+      async (tx) => {
+        await tx.update(LANDS_TABLE, land.id, {
+          name,
+          version: land.version + 1,
+          updated_at: Date.now(),
+        });
+        return { ok: true, name };
+      },
+    );
+    await afterMutation(land.id, "land.lease.renamed", ownerId, { name });
+    return result;
+  });
+}
 export async function handleLeaseStatus(input: Record<string, unknown>) {
   const land = await getLandById(textId(input.landId, "landId"));
   if (!land) throw new ServiceError("领地不存在", "not_found", 404);
@@ -450,7 +459,7 @@ export async function handleAuditLog(input: Record<string, unknown>) {
     offset: pageNumber(input.offset, 0, Number.MAX_SAFE_INTEGER),
   });
 }
-function inferLevel(box: Aabb): number {
+function inferLevel(box: LandShape): number {
   const half = Math.max(box.max.x - box.min.x, box.max.z - box.min.z) / 2;
   let level = 1;
   getConfig()

@@ -6,17 +6,53 @@
   "presentation": "reactive",
   "title": "租用领地",
   "state": {
-    "name": {
+    "shapeType": {
+      "type": "string",
+      "default": "cuboid"
+    },
+    "x": {
       "type": "string",
       "default": "",
-      "maxLength": 32
+      "maxLength": 16
     },
-    "days": {
+    "y": {
+      "type": "string",
+      "default": "",
+      "maxLength": 16
+    },
+    "z": {
+      "type": "string",
+      "default": "",
+      "maxLength": 16
+    },
+    "length": {
+      "type": "string",
+      "default": "",
+      "maxLength": 16
+    },
+    "width": {
+      "type": "string",
+      "default": "",
+      "maxLength": 16
+    },
+    "height": {
+      "type": "string",
+      "default": "",
+      "maxLength": 16
+    },
+    "radius": {
+      "type": "string",
+      "default": "",
+      "maxLength": 16
+    },
+    "daysOption": {
       "type": "number",
-      "default": 7,
-      "min": 1,
-      "max": 90,
-      "step": 1
+      "default": 7
+    },
+    "customDays": {
+      "type": "string",
+      "default": "7",
+      "maxLength": 3
     },
     "quoteId": {
       "type": "string",
@@ -30,13 +66,57 @@
       "type": "number",
       "default": 0
     },
-    "quotedDays": {
+    "quotedDaysOption": {
       "type": "number",
-      "default": 0
+      "default": -1
     },
-    "quotedName": {
+    "quotedCustomDays": {
       "type": "string",
       "default": ""
+    },
+    "quoted_shapeType": {
+      "type": "string",
+      "default": ""
+    },
+    "quoted_x": {
+      "type": "string",
+      "default": ""
+    },
+    "quoted_y": {
+      "type": "string",
+      "default": ""
+    },
+    "quoted_z": {
+      "type": "string",
+      "default": ""
+    },
+    "quoted_length": {
+      "type": "string",
+      "default": ""
+    },
+    "quoted_width": {
+      "type": "string",
+      "default": ""
+    },
+    "quoted_height": {
+      "type": "string",
+      "default": ""
+    },
+    "quoted_radius": {
+      "type": "string",
+      "default": ""
+    },
+    "shapeText": {
+      "type": "string",
+      "default": ""
+    },
+    "rangeText": {
+      "type": "string",
+      "default": ""
+    },
+    "volume": {
+      "type": "number",
+      "default": 0
     }
   },
   "load": {
@@ -49,34 +129,179 @@
   },
   "body": [
     {
-      "id": "mode",
+      "id": "draft",
       "type": "info",
       "items": [
-        "选地方式：{{data.draft.mode}}",
         "维度：{{data.draft.dimensionText}}",
-        "范围：{{data.draft.rangeText}}",
-        "{{data.draft.description}}"
+        "初始选区：{{data.draft.shapeText}}",
+        "{{data.draft.rangeText}}",
+        "名称在租用成功后自动生成，可在管理页修改。"
       ]
     },
     {
-      "id": "name",
-      "type": "textField",
-      "label": "领地名称",
-      "bind": "state.name"
+      "id": "select",
+      "type": "button",
+      "label": "空手重新选点",
+      "trigger": {
+        "type": "action",
+        "action": "select"
+      }
     },
     {
-      "id": "days",
-      "type": "slider",
-      "label": "租期天数",
-      "bind": "state.days",
-      "min": 1,
-      "max": 90,
-      "step": 1
+      "id": "shapeType",
+      "type": "dropdown",
+      "label": "领地形状",
+      "bind": "state.shapeType",
+      "options": [
+        {
+          "label": "长方体",
+          "value": "cuboid"
+        },
+        {
+          "label": "圆柱体",
+          "value": "cylinder"
+        }
+      ]
+    },
+    {
+      "id": "position-help",
+      "type": "info",
+      "items": [
+        "X/Z 为定位中心，Y 为底部高度。尺寸以方块计；留空沿用初始选区。"
+      ]
+    },
+    {
+      "id": "x",
+      "type": "textField",
+      "label": "中心 X",
+      "bind": "state.x",
+      "placeholder": "{{data.draft.x}}"
+    },
+    {
+      "id": "y",
+      "type": "textField",
+      "label": "底部 Y",
+      "bind": "state.y",
+      "placeholder": "{{data.draft.y}}"
+    },
+    {
+      "id": "z",
+      "type": "textField",
+      "label": "中心 Z",
+      "bind": "state.z",
+      "placeholder": "{{data.draft.z}}"
+    },
+    {
+      "id": "length",
+      "type": "textField",
+      "label": "长（X 方向）",
+      "bind": "state.length",
+      "placeholder": "{{data.draft.length}}",
+      "visibleWhen": {
+        "op": "equals",
+        "args": [
+          {
+            "ref": "state.shapeType"
+          },
+          {
+            "value": "cuboid"
+          }
+        ]
+      }
+    },
+    {
+      "id": "width",
+      "type": "textField",
+      "label": "宽（Z 方向）",
+      "bind": "state.width",
+      "placeholder": "{{data.draft.width}}",
+      "visibleWhen": {
+        "op": "equals",
+        "args": [
+          {
+            "ref": "state.shapeType"
+          },
+          {
+            "value": "cuboid"
+          }
+        ]
+      }
+    },
+    {
+      "id": "radius",
+      "type": "textField",
+      "label": "圆柱体半径",
+      "bind": "state.radius",
+      "placeholder": "{{data.draft.radius}}",
+      "visibleWhen": {
+        "op": "equals",
+        "args": [
+          {
+            "ref": "state.shapeType"
+          },
+          {
+            "value": "cylinder"
+          }
+        ]
+      }
+    },
+    {
+      "id": "height",
+      "type": "textField",
+      "label": "高度",
+      "bind": "state.height",
+      "placeholder": "{{data.draft.height}}"
+    },
+    {
+      "id": "daysOption",
+      "type": "dropdown",
+      "label": "租期",
+      "bind": "state.daysOption",
+      "options": [
+        {
+          "label": "7 天",
+          "value": 7
+        },
+        {
+          "label": "14 天",
+          "value": 14
+        },
+        {
+          "label": "30 天",
+          "value": 30
+        },
+        {
+          "label": "90 天",
+          "value": 90
+        },
+        {
+          "label": "自定义",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "id": "customDays",
+      "type": "textField",
+      "label": "自定义天数（1～90）",
+      "bind": "state.customDays",
+      "placeholder": "7",
+      "visibleWhen": {
+        "op": "equals",
+        "args": [
+          {
+            "ref": "state.daysOption"
+          },
+          {
+            "value": 0
+          }
+        ]
+      }
     },
     {
       "id": "preview",
       "type": "button",
-      "label": "预览并估价",
+      "label": "预览线框并估价",
       "trigger": {
         "type": "action",
         "action": "preview"
@@ -86,8 +311,10 @@
       "id": "quote",
       "type": "info",
       "items": [
+        "{{state.shapeText}} · 体积 {{state.volume}} 方块",
+        "{{state.rangeText}}",
         "本次费用：{{state.fee}} · 日租：{{state.dailyRent}}",
-        "先预览取得报价，再确认租用。名称或天数变更后须重新预览。"
+        "修改选区或租期后，请重新预览。"
       ]
     },
     {
@@ -117,10 +344,10 @@
             "op": "notEquals",
             "args": [
               {
-                "ref": "state.days"
+                "ref": "state.shapeType"
               },
               {
-                "ref": "state.quotedDays"
+                "ref": "state.quoted_shapeType"
               }
             ]
           },
@@ -128,10 +355,98 @@
             "op": "notEquals",
             "args": [
               {
-                "ref": "state.name"
+                "ref": "state.x"
               },
               {
-                "ref": "state.quotedName"
+                "ref": "state.quoted_x"
+              }
+            ]
+          },
+          {
+            "op": "notEquals",
+            "args": [
+              {
+                "ref": "state.y"
+              },
+              {
+                "ref": "state.quoted_y"
+              }
+            ]
+          },
+          {
+            "op": "notEquals",
+            "args": [
+              {
+                "ref": "state.z"
+              },
+              {
+                "ref": "state.quoted_z"
+              }
+            ]
+          },
+          {
+            "op": "notEquals",
+            "args": [
+              {
+                "ref": "state.length"
+              },
+              {
+                "ref": "state.quoted_length"
+              }
+            ]
+          },
+          {
+            "op": "notEquals",
+            "args": [
+              {
+                "ref": "state.width"
+              },
+              {
+                "ref": "state.quoted_width"
+              }
+            ]
+          },
+          {
+            "op": "notEquals",
+            "args": [
+              {
+                "ref": "state.height"
+              },
+              {
+                "ref": "state.quoted_height"
+              }
+            ]
+          },
+          {
+            "op": "notEquals",
+            "args": [
+              {
+                "ref": "state.radius"
+              },
+              {
+                "ref": "state.quoted_radius"
+              }
+            ]
+          },
+          {
+            "op": "notEquals",
+            "args": [
+              {
+                "ref": "state.daysOption"
+              },
+              {
+                "ref": "state.quotedDaysOption"
+              }
+            ]
+          },
+          {
+            "op": "notEquals",
+            "args": [
+              {
+                "ref": "state.customDays"
+              },
+              {
+                "ref": "state.quotedCustomDays"
               }
             ]
           }
@@ -153,8 +468,16 @@
         "service": "land.ui.previewLease",
         "input": {
           "playerId": "{{player.id}}",
-          "days": "{{state.days}}",
-          "name": "{{state.name}}"
+          "shapeType": "{{state.shapeType}}",
+          "x": "{{state.x}}",
+          "y": "{{state.y}}",
+          "z": "{{state.z}}",
+          "length": "{{state.length}}",
+          "width": "{{state.width}}",
+          "height": "{{state.height}}",
+          "radius": "{{state.radius}}",
+          "daysOption": "{{state.daysOption}}",
+          "customDays": "{{state.customDays}}"
         }
       },
       "onSuccess": [
@@ -164,8 +487,19 @@
             "quoteId": "{{result.quoteId}}",
             "fee": "{{result.fee}}",
             "dailyRent": "{{result.dailyRent}}",
-            "quotedDays": "{{result.days}}",
-            "quotedName": "{{result.quotedName}}"
+            "quotedDaysOption": "{{result.quotedDaysOption}}",
+            "quotedCustomDays": "{{result.quotedCustomDays}}",
+            "shapeText": "{{result.shapeText}}",
+            "rangeText": "{{result.rangeText}}",
+            "volume": "{{result.volume}}",
+            "quoted_shapeType": "{{result.quoted_shapeType}}",
+            "quoted_x": "{{result.quoted_x}}",
+            "quoted_y": "{{result.quoted_y}}",
+            "quoted_z": "{{result.quoted_z}}",
+            "quoted_length": "{{result.quoted_length}}",
+            "quoted_width": "{{result.quoted_width}}",
+            "quoted_height": "{{result.quoted_height}}",
+            "quoted_radius": "{{result.quoted_radius}}"
           }
         },
         {
@@ -184,21 +518,29 @@
     "create": {
       "confirm": {
         "title": "确认租用",
-        "body": "确认租用领地 {{state.days}} 天？费用 {{state.fee}} 货币；费用和范围将再次校验。"
+        "body": "确认租用 {{state.shapeText}}？费用 {{state.fee}} 货币。名称将自动生成。"
       },
       "call": {
         "service": "land.ui.createLease",
         "input": {
           "playerId": "{{player.id}}",
-          "name": "{{state.name}}",
-          "days": "{{state.days}}",
+          "shapeType": "{{state.shapeType}}",
+          "x": "{{state.x}}",
+          "y": "{{state.y}}",
+          "z": "{{state.z}}",
+          "length": "{{state.length}}",
+          "width": "{{state.width}}",
+          "height": "{{state.height}}",
+          "radius": "{{state.radius}}",
+          "daysOption": "{{state.daysOption}}",
+          "customDays": "{{state.customDays}}",
           "quoteId": "{{state.quoteId}}"
         }
       },
       "onSuccess": [
         {
           "effect": "message",
-          "text": "领地已创建，费用 {{result.fee}}",
+          "text": "已创建「{{result.name}}」，费用 {{result.fee}}",
           "tone": "success"
         },
         {
@@ -213,6 +555,30 @@
         {
           "effect": "message",
           "text": "租用失败：{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    },
+    "select": {
+      "call": {
+        "service": "land.ui.beginSelection",
+        "input": {
+          "playerId": "{{player.id}}"
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}"
+        },
+        {
+          "effect": "close"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "开启选点失败：{{result.message}}",
           "tone": "danger"
         }
       ]

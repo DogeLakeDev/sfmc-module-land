@@ -22,8 +22,9 @@ import {
   handleLeaseStatus,
   handleListByOwner,
   handleRenewLease,
+  handleRename,
   handleTerminateLease,
-  handleValidateBox,
+  handleValidateShape,
 } from "./services.js";
 import { defineLandTables } from "./store.js";
 import {
@@ -81,9 +82,10 @@ ModuleRegistry.register({
         "land.byId": handleById,
         "land.byPos": handleByPos,
         "land.listByOwner": handleListByOwner,
-        "land.validateBox": handleValidateBox,
+        "land.validateShape": handleValidateShape,
         "land.createLease": handleCreateLease,
         "land.renewLease": handleRenewLease,
+        "land.rename": handleRename,
         "land.expandLease": handleExpandLease,
         "land.terminateLease": handleTerminateLease,
         "land.leaseStatus": handleLeaseStatus,

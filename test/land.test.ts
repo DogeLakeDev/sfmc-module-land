@@ -8,9 +8,7 @@ import { fileURLToPath } from "node:url";
 import {
   aabbIntersects,
   blockVolume,
-  footprintBlocks,
   normalizeAabb,
-  verticalBoxFromCore,
 } from "../sapi/src/aabb.ts";
 import { DEFAULT_LAND_CONFIG, mergeLandConfig } from "../sapi/src/config.ts";
 import {
@@ -21,6 +19,14 @@ import {
   longTermDiscount,
   remainingLeaseDays,
 } from "../sapi/src/rent.ts";
+import {
+  boxShape,
+  defaultShape,
+  shapeVolume,
+  pointInShape,
+  shapesIntersect,
+  shapeContains,
+} from "../sapi/src/geometry.ts";
 import { DAY_MS } from "../sapi/src/types.ts";
 import { compileUiProject } from "@sfmc-bds/sdk/validation";
 
@@ -48,12 +54,11 @@ describe("land aabb", () => {
     assert.equal(aabbIntersects(a, b), true);
   });
 
-  it("verticalBoxFromCore 垂直通天", () => {
-    const box = verticalBoxFromCore({ x: 0, y: 64, z: 0 }, 16);
-    assert.equal(box.min.y, -64);
-    assert.equal(box.max.y, 319);
-    assert.equal(footprintBlocks(box), 33 * 33);
-    assert.ok(blockVolume(box) > footprintBlocks(box));
+  it("体积包含三维端点", () => {
+    assert.equal(
+      blockVolume({ min: { x: 0, y: 4, z: -1 }, max: { x: 2, y: 5, z: 1 } }),
+      18,
+    );
   });
 });
 
@@ -85,9 +90,9 @@ describe("land rent", () => {
     assert.equal(landCountMultiplier(99, m), 3.0);
   });
 
-  it("日租金含面积与倍率", () => {
+  it("日租金含三维体积与倍率", () => {
     const cfg = mergeLandConfig();
-    const box = verticalBoxFromCore({ x: 0, y: 64, z: 0 }, 16);
+    const box = defaultShape({ x: 0, y: 64, z: 0 }, "minecraft:overworld", cfg);
     const r0 = calcDailyRent(box, cfg, 0);
     const r1 = calcDailyRent(box, cfg, 1);
     assert.ok(r0 >= cfg.base_daily_rent);
@@ -147,19 +152,28 @@ describe("租赁配置与边界", () => {
     assert.throws(() => mergeLandConfig({ max_lands_per_player: -1 }));
     assert.throws(() =>
       mergeLandConfig({
-        claim: { initial_radius: 16, max_level: 3, level_radius: [16, 16, 32] },
+        claim: {
+          initial_radius: 16,
+          initial_height: 16,
+          max_level: 3,
+          level_radius: [16, 16, 32],
+        },
       }),
     );
   });
-  it("默认范围七天费用为 224，而不是只算基础租金", () => {
-    const box = verticalBoxFromCore({ x: 0, y: 70, z: 0 }, 16);
+  it("默认 33×16×33 范围七天费用为 2513", () => {
+    const box = defaultShape(
+      { x: 0, y: 70, z: 0 },
+      "minecraft:overworld",
+      DEFAULT_LAND_CONFIG,
+    );
     assert.equal(
       calcPeriodRent(
         calcDailyRent(box, DEFAULT_LAND_CONFIG, 0),
         7,
         DEFAULT_LAND_CONFIG,
       ),
-      224,
+      2513,
     );
   });
   it("最后半天扩建仍收取按比例计算的补差", () => {
@@ -189,5 +203,56 @@ describe("声明式租赁 GUI", () => {
       ),
     });
     assert.equal(result.ok, true, JSON.stringify(result));
+  });
+});
+
+describe("三维形状", () => {
+  const cylinder = (x = 0, z = 0, radius = 2) => ({
+    type: "cylinder" as const,
+    radius,
+    min: { x: x - radius, y: 0, z: z - radius },
+    max: { x: x + radius, y: 2, z: z + radius },
+  });
+  it("圆柱体按实际方块柱计体积，排除外接盒角落", () => {
+    const shape = cylinder();
+    assert.equal(shapeVolume(shape), 13 * 3);
+    assert.equal(pointInShape({ x: 2, y: 1, z: 2 }, shape), false);
+    assert.equal(pointInShape({ x: 2, y: 1, z: 0 }, shape), true);
+  });
+  it("圆柱体与长方体、圆柱体的相交判断不使用外接盒代替", () => {
+    const a = cylinder();
+    assert.equal(shapesIntersect(a, cylinder(3, 3)), false);
+    assert.equal(shapesIntersect(a, cylinder(2, 0)), true);
+    const corner = boxShape({
+      min: { x: 2, y: 0, z: 2 },
+      max: { x: 2, y: 2, z: 2 },
+    });
+    assert.equal(shapesIntersect(a, corner), false);
+    assert.equal(
+      shapesIntersect(
+        a,
+        boxShape({ min: { x: 0, y: 3, z: 0 }, max: { x: 0, y: 5, z: 0 } }),
+      ),
+      false,
+    );
+  });
+  it("扩建包含判断同时检查高度和圆柱体实际截面", () => {
+    assert.equal(shapeContains(cylinder(0, 0, 3), cylinder()), true);
+    assert.equal(shapeContains(cylinder(), cylinder(1, 0)), false);
+    assert.equal(
+      shapeContains(
+        { ...cylinder(0, 0, 3), min: { x: -3, y: 1, z: -3 } },
+        cylinder(),
+      ),
+      false,
+    );
+  });
+  it("增加高度会增加租金", () => {
+    const low = cylinder(),
+      high = { ...low, max: { ...low.max, y: 20 } };
+    assert.ok(
+      calcDailyRent(high, DEFAULT_LAND_CONFIG, 0) >
+        calcDailyRent(low, DEFAULT_LAND_CONFIG, 0),
+    );
   });
 });

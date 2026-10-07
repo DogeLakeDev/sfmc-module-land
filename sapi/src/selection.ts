@@ -1,37 +1,44 @@
-/** 金镐选定领地范围，不自动提交或扣款。 */
-import { world, type Player } from "@minecraft/server";
+/** 界面开启选点后，空手点击两个方块；普通交互不启动选地。 */
+import { system, world, type Player } from "@minecraft/server";
 import { debug, Msg } from "@sfmc-bds/sdk/sapi/runtime";
 import { normalizeAabb } from "./aabb.js";
-import { showLandHighlight, clearShapes } from "./debug-draw.js";
-import { clearLandUiState } from "./ui-services.js";
-import { pendingBoxes } from "./pending.js";
-import { openLandUi } from "./ui.js";
-
-type Selection = {
-  a?: { x: number; y: number; z: number };
-  dimension?: string;
-};
-
-const selections = new Map<string, Selection>();
+import { clearShapes } from "./debug-draw.js";
+import { acceptSelectedRange, clearLandUiState } from "./ui-services.js";
+import { pendingBoxes, selectionSessions } from "./pending.js";
 
 export function clearLandSelections(): void {
-  selections.clear();
+  selectionSessions.clear();
   pendingBoxes.clear();
 }
 export function registerLandSelectionEvents(cleanups: Array<() => void>): void {
-  const callback = world.afterEvents.playerInteractWithBlock.subscribe((ev) => {
-    void selectBlock(ev.player, ev.block.location, ev.block.dimension.id).catch(
-      (error) => {
-        debug.w("LandSelection", String(error));
-        Msg.error("选点失败，请重试", ev.player);
-      },
-    );
-  });
+  const callback = world.beforeEvents.playerInteractWithBlock.subscribe(
+    (ev) => {
+      const session = selectionSessions.get(ev.player.id);
+      if (!session || ev.itemStack || !ev.isFirstEvent) return;
+      if (Date.now() - session.startedAt > 300_000) {
+        selectionSessions.delete(ev.player.id);
+        return;
+      }
+      ev.cancel = true;
+      const player = ev.player,
+        loc = { ...ev.block.location },
+        dimension = ev.block.dimension.id;
+      system.run(() => {
+        void selectBlock(player, loc, dimension).catch((error) => {
+          debug.w("LandSelection", String(error));
+          Msg.error(
+            error instanceof Error ? error.message : "选点失败，请重试",
+            player,
+          );
+        });
+      });
+    },
+  );
   cleanups.push(() =>
-    world.afterEvents.playerInteractWithBlock.unsubscribe(callback),
+    world.beforeEvents.playerInteractWithBlock.unsubscribe(callback),
   );
   const leave = world.afterEvents.playerLeave.subscribe((ev) => {
-    selections.delete(ev.playerId);
+    selectionSessions.delete(ev.playerId);
     pendingBoxes.delete(ev.playerId);
     clearLandUiState(ev.playerId);
     clearShapes(`preview:${ev.playerId}`);
@@ -43,42 +50,24 @@ async function selectBlock(
   loc: { x: number; y: number; z: number },
   dimension: string,
 ): Promise<void> {
-  const inv = player.getComponent("minecraft:inventory");
-  const slotIndex =
-    typeof (player as { selectedSlotIndex?: number }).selectedSlotIndex ===
-    "number"
-      ? (player as { selectedSlotIndex: number }).selectedSlotIndex
-      : 0;
-  const slot = inv?.container?.getItem(slotIndex);
-  if (slot?.typeId !== "minecraft:golden_pickaxe") return;
-
-  const sel = selections.get(player.id) ?? {};
-  if (!sel.a || sel.dimension !== dimension) {
-    selections.set(player.id, { a: loc, dimension });
+  const session = selectionSessions.get(player.id);
+  if (!session) return;
+  if (!session.a || session.dimension !== dimension) {
+    selectionSessions.set(player.id, {
+      a: loc,
+      dimension,
+      startedAt: Date.now(),
+    });
     Msg.info(
-      `已选定点 A (${loc.x},${loc.y},${loc.z})，再点一次设定点 B`,
+      `已选定点 A (${loc.x},${loc.y},${loc.z})，请空手点击第二个对角点`,
       player,
     );
     return;
   }
-
-  const box = normalizeAabb({
-    min: { x: sel.a.x, y: sel.a.y, z: sel.a.z },
-    max: { x: loc.x, y: loc.y, z: loc.z },
-  });
-  selections.delete(player.id);
-  clearLandUiState(player.id);
-  pendingBoxes.set(player.id, { box, dimension });
-  await showLandHighlight({
-    key: `preview:${player.id}`,
-    box,
+  await acceptSelectedRange(
+    player,
+    normalizeAabb({ min: session.a, max: loc }),
     dimension,
-  });
-  Msg.info("预览已挂载。请在「租用领地」中预览费用并确认。", player);
-  void openLandUi(player, "land.lease").catch((error) => {
-    debug.w(
-      "LandSelection",
-      `打开租用界面失败: ${error instanceof Error ? error.message : String(error)}`,
-    );
-  });
+  );
+  selectionSessions.delete(player.id);
 }

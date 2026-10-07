@@ -24,8 +24,10 @@
     "service:land.expandLease",
     "service:land.leaseStatus",
     "service:land.listByOwner",
+    "service:land.rename",
     "service:land.renewLease",
     "service:land.terminateLease",
+    "service:land.ui.beginSelection",
     "service:land.ui.createLease",
     "service:land.ui.detail",
     "service:land.ui.expand",
@@ -33,9 +35,10 @@
     "service:land.ui.previewExpand",
     "service:land.ui.previewLease",
     "service:land.ui.previewRenew",
+    "service:land.ui.rename",
     "service:land.ui.renew",
     "service:land.ui.terminate",
-    "service:land.validateBox"
+    "service:land.validateShape"
   ],
   "services": {
     "provides": [
@@ -115,60 +118,51 @@
               "type": "string"
             },
             "dimension": {
-              "type": "string",
-              "enum": [
-                "minecraft:overworld",
-                "minecraft:nether",
-                "minecraft:the_end"
-              ]
+              "type": "string"
             },
-            "requestId": {
-              "type": "string",
-              "minLength": 8,
-              "maxLength": 128
-            },
-            "expectedFee": {
-              "type": "integer",
-              "minimum": 0
-            },
-            "days": {
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 90
-            },
-            "name": {
-              "type": "string",
-              "maxLength": 32
-            },
-            "min": {
+            "shape": {
               "type": "object",
               "properties": {
-                "x": {
-                  "type": "number"
+                "type": {
+                  "type": "string",
+                  "enum": ["cuboid", "cylinder"]
                 },
-                "y": {
-                  "type": "number"
+                "min": {
+                  "type": "object",
+                  "properties": {
+                    "x": {
+                      "type": "number"
+                    },
+                    "y": {
+                      "type": "number"
+                    },
+                    "z": {
+                      "type": "number"
+                    }
+                  },
+                  "required": ["x", "y", "z"]
                 },
-                "z": {
-                  "type": "number"
+                "max": {
+                  "type": "object",
+                  "properties": {
+                    "x": {
+                      "type": "number"
+                    },
+                    "y": {
+                      "type": "number"
+                    },
+                    "z": {
+                      "type": "number"
+                    }
+                  },
+                  "required": ["x", "y", "z"]
+                },
+                "radius": {
+                  "type": "integer",
+                  "minimum": 1
                 }
               },
-              "required": ["x", "y", "z"]
-            },
-            "max": {
-              "type": "object",
-              "properties": {
-                "x": {
-                  "type": "number"
-                },
-                "y": {
-                  "type": "number"
-                },
-                "z": {
-                  "type": "number"
-                }
-              },
-              "required": ["x", "y", "z"]
+              "required": ["type", "min", "max"]
             },
             "core": {
               "type": "object",
@@ -184,9 +178,33 @@
                 }
               },
               "required": ["x", "y", "z"]
+            },
+            "days": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 90
+            },
+            "requestId": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 128
+            },
+            "version": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "expectedFee": {
+              "type": "integer",
+              "minimum": 0
             }
           },
-          "required": ["playerId", "dimension", "requestId", "expectedFee"]
+          "required": [
+            "playerId",
+            "dimension",
+            "days",
+            "requestId",
+            "expectedFee"
+          ]
         },
         "output": {
           "type": "object"
@@ -208,52 +226,65 @@
               "minLength": 8,
               "maxLength": 128
             },
-            "expectedFee": {
-              "type": "integer",
-              "minimum": 0
-            },
-            "newMin": {
-              "type": "object",
-              "properties": {
-                "x": {
-                  "type": "number"
-                },
-                "y": {
-                  "type": "number"
-                },
-                "z": {
-                  "type": "number"
-                }
-              },
-              "required": ["x", "y", "z"]
-            },
-            "newMax": {
-              "type": "object",
-              "properties": {
-                "x": {
-                  "type": "number"
-                },
-                "y": {
-                  "type": "number"
-                },
-                "z": {
-                  "type": "number"
-                }
-              },
-              "required": ["x", "y", "z"]
-            },
             "version": {
               "type": "integer",
               "minimum": 1
+            },
+            "shape": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": ["cuboid", "cylinder"]
+                },
+                "min": {
+                  "type": "object",
+                  "properties": {
+                    "x": {
+                      "type": "number"
+                    },
+                    "y": {
+                      "type": "number"
+                    },
+                    "z": {
+                      "type": "number"
+                    }
+                  },
+                  "required": ["x", "y", "z"]
+                },
+                "max": {
+                  "type": "object",
+                  "properties": {
+                    "x": {
+                      "type": "number"
+                    },
+                    "y": {
+                      "type": "number"
+                    },
+                    "z": {
+                      "type": "number"
+                    }
+                  },
+                  "required": ["x", "y", "z"]
+                },
+                "radius": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "required": ["type", "min", "max"]
+            },
+            "expectedFee": {
+              "type": "integer",
+              "minimum": 0
             }
           },
           "required": [
             "playerId",
             "landId",
+            "shape",
             "requestId",
-            "expectedFee",
-            "newMin",
-            "newMax"
+            "expectedFee"
           ]
         },
         "output": {
@@ -294,6 +325,38 @@
             }
           },
           "required": ["ownerId"]
+        },
+        "output": {
+          "type": "object"
+        }
+      },
+      {
+        "name": "land.rename",
+        "input": {
+          "type": "object",
+          "properties": {
+            "playerId": {
+              "type": "string"
+            },
+            "landId": {
+              "type": "string"
+            },
+            "requestId": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 128
+            },
+            "version": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 32
+            }
+          },
+          "required": ["playerId", "landId", "name", "requestId"]
         },
         "output": {
           "type": "object"
@@ -363,6 +426,21 @@
         }
       },
       {
+        "name": "land.ui.beginSelection",
+        "input": {
+          "type": "object",
+          "properties": {
+            "playerId": {
+              "type": "string"
+            }
+          },
+          "required": ["playerId"]
+        },
+        "output": {
+          "type": "object"
+        }
+      },
+      {
         "name": "land.ui.createLease",
         "input": {
           "type": "object",
@@ -370,20 +448,43 @@
             "playerId": {
               "type": "string"
             },
-            "days": {
+            "daysOption": {
               "type": "integer",
-              "minimum": 1,
-              "maximum": 90
+              "enum": [7, 14, 30, 90, 0]
+            },
+            "customDays": {
+              "type": "string"
+            },
+            "shapeType": {
+              "type": "string",
+              "enum": ["cuboid", "cylinder"]
+            },
+            "x": {
+              "type": "string"
+            },
+            "y": {
+              "type": "string"
+            },
+            "z": {
+              "type": "string"
+            },
+            "length": {
+              "type": "string"
+            },
+            "width": {
+              "type": "string"
+            },
+            "height": {
+              "type": "string"
+            },
+            "radius": {
+              "type": "string"
             },
             "quoteId": {
               "type": "string"
-            },
-            "name": {
-              "type": "string",
-              "maxLength": 32
             }
           },
-          "required": ["playerId", "days", "quoteId"]
+          "required": ["playerId", "daysOption", "quoteId"]
         },
         "output": {
           "type": "object"
@@ -477,17 +578,40 @@
             "playerId": {
               "type": "string"
             },
-            "days": {
+            "daysOption": {
               "type": "integer",
-              "minimum": 1,
-              "maximum": 90
+              "enum": [7, 14, 30, 90, 0]
             },
-            "name": {
+            "customDays": {
+              "type": "string"
+            },
+            "shapeType": {
               "type": "string",
-              "maxLength": 32
+              "enum": ["cuboid", "cylinder"]
+            },
+            "x": {
+              "type": "string"
+            },
+            "y": {
+              "type": "string"
+            },
+            "z": {
+              "type": "string"
+            },
+            "length": {
+              "type": "string"
+            },
+            "width": {
+              "type": "string"
+            },
+            "height": {
+              "type": "string"
+            },
+            "radius": {
+              "type": "string"
             }
           },
-          "required": ["playerId", "days"]
+          "required": ["playerId", "daysOption"]
         },
         "output": {
           "type": "object"
@@ -504,13 +628,47 @@
             "landId": {
               "type": "string"
             },
-            "days": {
+            "daysOption": {
               "type": "integer",
-              "minimum": 1,
-              "maximum": 90
+              "enum": [7, 14, 30, 90, 0]
+            },
+            "customDays": {
+              "type": "string"
             }
           },
-          "required": ["playerId", "landId", "days"]
+          "required": ["playerId", "landId", "daysOption"]
+        },
+        "output": {
+          "type": "object"
+        }
+      },
+      {
+        "name": "land.ui.rename",
+        "input": {
+          "type": "object",
+          "properties": {
+            "playerId": {
+              "type": "string"
+            },
+            "landId": {
+              "type": "string"
+            },
+            "requestId": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 128
+            },
+            "version": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 32
+            }
+          },
+          "required": ["playerId", "landId", "name", "requestId", "version"]
         },
         "output": {
           "type": "object"
@@ -527,16 +685,18 @@
             "landId": {
               "type": "string"
             },
-            "days": {
+            "daysOption": {
               "type": "integer",
-              "minimum": 1,
-              "maximum": 90
+              "enum": [7, 14, 30, 90, 0]
+            },
+            "customDays": {
+              "type": "string"
             },
             "quoteId": {
               "type": "string"
             }
           },
-          "required": ["playerId", "landId", "days", "quoteId"]
+          "required": ["playerId", "landId", "daysOption", "quoteId"]
         },
         "output": {
           "type": "object"
@@ -566,7 +726,7 @@
         }
       },
       {
-        "name": "land.validateBox",
+        "name": "land.validateShape",
         "input": {
           "type": "object",
           "properties": {
@@ -574,48 +734,57 @@
               "type": "string"
             },
             "dimension": {
-              "type": "string",
-              "enum": [
-                "minecraft:overworld",
-                "minecraft:nether",
-                "minecraft:the_end"
-              ]
+              "type": "string"
             },
-            "min": {
+            "shape": {
               "type": "object",
               "properties": {
-                "x": {
-                  "type": "number"
+                "type": {
+                  "type": "string",
+                  "enum": ["cuboid", "cylinder"]
                 },
-                "y": {
-                  "type": "number"
+                "min": {
+                  "type": "object",
+                  "properties": {
+                    "x": {
+                      "type": "number"
+                    },
+                    "y": {
+                      "type": "number"
+                    },
+                    "z": {
+                      "type": "number"
+                    }
+                  },
+                  "required": ["x", "y", "z"]
                 },
-                "z": {
-                  "type": "number"
+                "max": {
+                  "type": "object",
+                  "properties": {
+                    "x": {
+                      "type": "number"
+                    },
+                    "y": {
+                      "type": "number"
+                    },
+                    "z": {
+                      "type": "number"
+                    }
+                  },
+                  "required": ["x", "y", "z"]
+                },
+                "radius": {
+                  "type": "integer",
+                  "minimum": 1
                 }
               },
-              "required": ["x", "y", "z"]
-            },
-            "max": {
-              "type": "object",
-              "properties": {
-                "x": {
-                  "type": "number"
-                },
-                "y": {
-                  "type": "number"
-                },
-                "z": {
-                  "type": "number"
-                }
-              },
-              "required": ["x", "y", "z"]
+              "required": ["type", "min", "max"]
             },
             "excludeLandId": {
               "type": "string"
             }
           },
-          "required": ["ownerId", "dimension", "min", "max"]
+          "required": ["ownerId", "dimension", "shape"]
         },
         "output": {
           "type": "object"
@@ -637,5 +806,5 @@
       }
     ]
   },
-  "notes": "领地租赁、续租、扩建和租期管理。"
+  "notes": "线框预览要求宿主行为包声明 @minecraft/debug-utilities 1.0.0-beta，并启用对应 Beta API。新形状结构不兼容旧领地数据。"
 }

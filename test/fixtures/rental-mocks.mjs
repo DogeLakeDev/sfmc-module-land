@@ -10,6 +10,24 @@ export const runtime = {
   commitReplyLost: false,
 };
 export const balances = new Map();
+export const drawnShapes = [];
+export const timeouts = new Map();
+let nextTimer = 1;
+export class DebugBox {
+  constructor(location) {
+    this.location = location;
+    this.removed = false;
+  }
+  remove() {
+    this.removed = true;
+  }
+}
+export class DebugCylinder extends DebugBox {}
+export const debugDrawer = {
+  addShape(shape, dimension) {
+    drawnShapes.push({ shape, dimension });
+  },
+};
 const ledger = new Map();
 function matches(row, where) {
   if (!where) return true;
@@ -31,6 +49,8 @@ export function reset() {
   runtime.commitReplyLost = false;
   balances.clear();
   ledger.clear();
+  drawnShapes.length = 0;
+  timeouts.clear();
 }
 export function put(table, row) {
   if (!tables.has(table)) tables.set(table, new Map());
@@ -159,16 +179,27 @@ export const world = {
     playerInteractWithBlock: signal("afterInteract"),
     entitySpawn: signal("afterSpawn"),
   },
-  beforeEvents: { explosion: signal("beforeExplosion") },
+  beforeEvents: {
+    explosion: signal("beforeExplosion"),
+    playerInteractWithBlock: signal("beforeInteract"),
+  },
 };
 export const system = {
-  runTimeout() {
-    return 1;
+  run(fn) {
+    fn();
+    return nextTimer++;
+  },
+  runTimeout(fn) {
+    const id = nextTimer++;
+    timeouts.set(id, fn);
+    return id;
   },
   runInterval() {
     return 1;
   },
-  clearRun() {},
+  clearRun(id) {
+    timeouts.delete(id);
+  },
 };
 export const config = {
   async getAll() {
