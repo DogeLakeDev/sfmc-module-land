@@ -7,8 +7,8 @@ import detailUi from "./ui/screens/detail.ui.json" with { type: "json" };
 import homeUi from "./ui/screens/home.ui.json" with { type: "json" };
 import leaseUi from "./ui/screens/lease.ui.json" with { type: "json" };
 import listUi from "./ui/screens/list.ui.json" with { type: "json" };
-import perksUi from "./ui/screens/perks.ui.json" with { type: "json" };
-import teleportUi from "./ui/screens/teleport.ui.json" with { type: "json" };
+import statusUi from "./ui/screens/status.ui.json" with { type: "json" };
+import renameUi from "./ui/screens/rename.ui.json" with { type: "json" };
 
 const MODULE_ID = "land";
 let unregisterUi: (() => void) | undefined;
@@ -21,9 +21,9 @@ export function registerLandUi(): void {
       "screens/home.ui.json": homeUi,
       "screens/list.ui.json": listUi,
       "screens/detail.ui.json": detailUi,
-      "screens/perks.ui.json": perksUi,
       "screens/lease.ui.json": leaseUi,
-      "screens/teleport.ui.json": teleportUi,
+      "screens/status.ui.json": statusUi,
+      "screens/rename.ui.json": renameUi,
     },
   });
 }

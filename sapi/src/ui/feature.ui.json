@@ -2,25 +2,43 @@
   "$schema": "https://cdn.jsdelivr.net/gh/DogeLakeDev/ScriptsForMinecraftServer@main/modules/sdk/@sfmc-sdk/schemas/ui-feature.v1.schema.json",
   "formatVersion": 1,
   "moduleId": "land",
-  "name": "领地庄园",
+  "name": "领地",
   "entries": [
     {
       "id": "land.main",
       "surface": "player",
       "group": "world",
-      "title": "领地庄园",
-      "description": "起租、续租、扩建和管理庄园",
+      "title": "领地",
+      "description": "租用、续租、扩建和解除领地租赁",
       "order": 30,
-      "permission": "land.gui.use",
+      "permission": "land.use",
       "target": "land.home"
     }
   ],
   "screens": [
-    { "id": "land.home", "file": "screens/home.ui.json" },
-    { "id": "land.list", "file": "screens/list.ui.json" },
-    { "id": "land.detail", "file": "screens/detail.ui.json" },
-    { "id": "land.perks", "file": "screens/perks.ui.json" },
-    { "id": "land.lease", "file": "screens/lease.ui.json" },
-    { "id": "land.teleport", "file": "screens/teleport.ui.json" }
+    {
+      "id": "land.home",
+      "file": "screens/home.ui.json"
+    },
+    {
+      "id": "land.list",
+      "file": "screens/list.ui.json"
+    },
+    {
+      "id": "land.detail",
+      "file": "screens/detail.ui.json"
+    },
+    {
+      "id": "land.lease",
+      "file": "screens/lease.ui.json"
+    },
+    {
+      "id": "land.status",
+      "file": "screens/status.ui.json"
+    },
+    {
+      "id": "land.rename",
+      "file": "screens/rename.ui.json"
+    }
   ]
 }

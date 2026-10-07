@@ -1,81 +1,62 @@
-/**
- * 欠租休眠 / 宽限期终止状态机（小时级扫描）。
- */
-
-import { world } from "@minecraft/server";
-import { debug, Msg } from "@sfmc-bds/sdk/sapi/runtime";
-import { syncLandArea, unregisterLandArea } from "./area-bridge.js";
-import { cacheRemove, cacheUpsert } from "./cache.js";
+/** 按真实到期时间处理宽限期与租赁结束，避免重启延长租期。 */
+import { debug } from "@sfmc-bds/sdk/sapi/runtime";
 import type { LandConfig } from "./config.js";
 import { clearShapes } from "./debug-draw.js";
 import { activityRecord } from "./platform.js";
 import {
-  getLandById,
   listExpiredActive,
   listGraceExpired,
-  listPerks,
   updateLandFields,
 } from "./store.js";
+import { serializeLandMutation } from "./mutations.js";
 import { DAY_MS } from "./types.js";
 
-export async function runLeaseScan(cfg: LandConfig): Promise<{
-  dormant: number;
-  terminated: number;
-}> {
-  const now = Date.now();
-  let dormant = 0;
-  let terminated = 0;
-
-  const expired = await listExpiredActive(now);
-  for (const land of expired) {
-    const graceUntil = now + cfg.grace_period_days * DAY_MS;
-    await updateLandFields(land.id, {
-      status: "dormant",
-      grace_until: graceUntil,
-    });
-    const updated = await getLandById(land.id);
-    if (updated) {
-      await syncLandArea(updated);
-      const perks = await listPerks(land.id);
-      cacheUpsert(
-        updated,
-        perks.filter((p) => p.enabled).map((p) => String(p.perk_id)),
-      );
-    }
-    dormant++;
-
-    await activityRecord({
-      eventType: "land.lease_dormant",
-      actorId: land.owner_id,
-      targetId: land.id,
-      payload: { graceUntil },
-    });
-
-    for (const p of world.getAllPlayers()) {
-      if (p.id === land.owner_id) {
-        Msg.warning(
-          `庄园「${land.name}」已欠租进入 ${cfg.grace_period_days} 天休眠保护，请尽快续租！`,
-          p,
-        );
+export function runLeaseScan(
+  cfg: LandConfig,
+): Promise<{ dormant: number; terminated: number }> {
+  return serializeLandMutation(async () => {
+    const now = Date.now();
+    let dormant = 0,
+      terminated = 0;
+    for (;;) {
+      const expired = await listExpiredActive(now);
+      if (!expired.length) break;
+      for (const land of expired) {
+        const graceUntil = land.lease_until + cfg.grace_period_days * DAY_MS;
+        await updateLandFields(land.id, {
+          status: "dormant",
+          grace_until: graceUntil,
+          version: land.version + 1,
+        });
+        dormant++;
+        await activityRecord({
+          eventType: "land.lease.dormant",
+          actorId: "system",
+          targetId: land.id,
+          payload: { graceUntil },
+        });
       }
     }
-  }
-
-  const graceDone = await listGraceExpired(now);
-  for (const land of graceDone) {
-    await updateLandFields(land.id, { status: "terminated" });
-    await unregisterLandArea(land.id);
-    cacheRemove(land.id);
-    clearShapes(land.id);
-    terminated++;
-    await activityRecord({
-      eventType: "land.lease_terminated",
-      actorId: "system",
-      targetId: land.id,
-      payload: { reason: "grace_expired" },
-    });
-    debug.i("LandScan", `terminated ${land.id} (${land.name})`);
-  }
-
-  return { dormant, terminated };
+    for (;;) {
+      const ended = await listGraceExpired(now);
+      if (!ended.length) break;
+      for (const land of ended) {
+        await updateLandFields(land.id, {
+          status: "terminated",
+          version: land.version + 1,
+        });
+        clearShapes(land.id);
+        terminated++;
+        await activityRecord({
+          eventType: "land.lease.terminated",
+          actorId: "system",
+          targetId: land.id,
+          payload: { reason: "grace_expired" },
+        });
+      }
+    }
+    if (dormant || terminated)
+      debug.i("LandScan", `休眠 ${dormant}，结束 ${terminated}`);
+    return { dormant, terminated };
+  });
 }

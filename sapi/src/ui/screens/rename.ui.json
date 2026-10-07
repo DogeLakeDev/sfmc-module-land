@@ -1,0 +1,121 @@
+{
+  "$schema": "https://cdn.jsdelivr.net/gh/DogeLakeDev/ScriptsForMinecraftServer@main/modules/sdk/@sfmc-sdk/schemas/ui-screen.v1.schema.json",
+  "formatVersion": 1,
+  "presentation": "reactive",
+  "params": {
+    "landId": {
+      "type": "string",
+      "required": true
+    }
+  },
+  "load": {
+    "land": {
+      "service": "land.ui.detail",
+      "input": {
+        "playerId": "{{player.id}}",
+        "landId": "{{params.landId}}"
+      }
+    }
+  },
+  "id": "land.rename",
+  "name": "修改领地名称",
+  "title": "修改名称",
+  "state": {
+    "name": {
+      "type": "string",
+      "default": "",
+      "maxLength": 32
+    }
+  },
+  "body": [
+    {
+      "id": "current",
+      "type": "info",
+      "items": ["当前名称：{{data.land.name}}", "新名称为 1～32 个字符。"]
+    },
+    {
+      "id": "name",
+      "type": "textField",
+      "label": "新名称",
+      "bind": "state.name",
+      "placeholder": "{{data.land.name}}"
+    },
+    {
+      "id": "save",
+      "type": "button",
+      "label": "保存名称",
+      "tone": "primary",
+      "trigger": {
+        "type": "action",
+        "action": "rename"
+      },
+      "disabledWhen": {
+        "op": "or",
+        "args": [
+          {
+            "op": "not",
+            "args": [
+              {
+                "ref": "data.land.canRename"
+              }
+            ]
+          },
+          {
+            "op": "equals",
+            "args": [
+              {
+                "ref": "state.name"
+              },
+              {
+                "value": ""
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "back",
+      "type": "button",
+      "label": "返回",
+      "trigger": {
+        "type": "back"
+      }
+    }
+  ],
+  "actions": {
+    "rename": {
+      "call": {
+        "service": "land.ui.rename",
+        "input": {
+          "playerId": "{{player.id}}",
+          "landId": "{{params.landId}}",
+          "name": "{{state.name}}",
+          "version": "{{data.land.version}}",
+          "requestId": "{{data.land.renameRequestId}}"
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "名称已改为「{{result.name}}」",
+          "tone": "success"
+        },
+        {
+          "effect": "replace",
+          "to": "land.detail",
+          "params": {
+            "landId": "{{params.landId}}"
+          }
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "改名失败：{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    }
+  }
+}

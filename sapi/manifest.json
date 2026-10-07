@@ -2,129 +2,209 @@
   "$schema": "https://cdn.jsdelivr.net/gh/DogeLakeDev/ScriptsForMinecraftServer@main/modules/sdk/@sfmc-sdk/schemas/sapi-manifest.v2.schema.json",
   "schemaVersion": 2,
   "id": "land",
-  "name": "Land",
+  "name": "领地",
   "configKey": "land",
   "enabledByDefault": true,
   "canDisable": true,
   "requires": ["economy", "activity-log"],
   "permissions": [
     "config:read:land",
-    "db:read:sfmc_lands",
-    "db:write:sfmc_lands",
-    "db:read:sfmc_land_members",
-    "db:write:sfmc_land_members",
-    "db:read:sfmc_land_perks",
-    "db:write:sfmc_land_perks",
-    "db:read:sfmc_land_guestbook",
-    "db:write:sfmc_land_guestbook",
     "db:read:sfmc_land_operations",
+    "db:read:sfmc_lands",
     "db:write:sfmc_land_operations",
+    "db:write:sfmc_lands",
+    "service:activity.query",
+    "service:activity.record",
+    "service:economy.account.credit",
+    "service:economy.account.debit",
+    "service:land.auditLog",
     "service:land.byId",
     "service:land.byPos",
-    "service:land.listByOwner",
-    "service:land.listMembers",
-    "service:land.getPlayerRole",
-    "service:land.validateBox",
     "service:land.createLease",
-    "service:land.renewLease",
     "service:land.expandLease",
-    "service:land.terminateLease",
-    "service:land.teleport",
     "service:land.leaseStatus",
-    "service:land.getPerks",
-    "service:land.setPerk",
-    "service:land.guestbook.list",
-    "service:land.guestbook.sign",
-    "service:land.auditLog",
-    "service:land.ui.detail",
-    "service:land.ui.renew",
-    "service:land.ui.previewExpand",
-    "service:land.ui.expand",
-    "service:land.ui.terminate",
-    "service:land.ui.perks",
-    "service:land.ui.togglePerk",
-    "service:land.ui.leaseDraft",
-    "service:land.ui.previewLease",
+    "service:land.listByOwner",
+    "service:land.rename",
+    "service:land.renewLease",
+    "service:land.terminateLease",
+    "service:land.ui.beginSelection",
     "service:land.ui.createLease",
-    "service:land.ui.teleportByName",
-    "service:economy.account.get",
-    "service:economy.account.debit",
-    "service:economy.account.credit",
-    "service:activity.record",
-    "service:activity.query",
-    "service:area.registerArea",
-    "service:area.unregisterArea",
-    "service:area.registerFeature"
+    "service:land.ui.detail",
+    "service:land.ui.expand",
+    "service:land.ui.leaseDraft",
+    "service:land.ui.previewExpand",
+    "service:land.ui.previewLease",
+    "service:land.ui.previewRenew",
+    "service:land.ui.rename",
+    "service:land.ui.renew",
+    "service:land.ui.terminate",
+    "service:land.validateShape"
   ],
   "services": {
     "provides": [
       {
-        "name": "land.byId",
+        "name": "land.auditLog",
         "input": {
-          "type": "object"
+          "type": "object",
+          "properties": {
+            "playerId": {
+              "type": "string"
+            },
+            "landId": {
+              "type": "string"
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            },
+            "offset": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "required": ["playerId", "landId"]
         },
         "output": {
           "type": "object"
         }
+      },
+      {
+        "name": "land.byId",
+        "input": {
+          "type": "object",
+          "properties": {
+            "landId": {
+              "type": "string"
+            }
+          },
+          "required": ["landId"]
+        },
+        "output": {}
       },
       {
         "name": "land.byPos",
         "input": {
-          "type": "object"
+          "type": "object",
+          "properties": {
+            "dimension": {
+              "type": "string",
+              "enum": [
+                "minecraft:overworld",
+                "minecraft:nether",
+                "minecraft:the_end"
+              ]
+            },
+            "x": {
+              "type": "number"
+            },
+            "y": {
+              "type": "number"
+            },
+            "z": {
+              "type": "number"
+            }
+          },
+          "required": ["dimension", "x", "y", "z"]
         },
-        "output": {
-          "type": "object"
-        }
-      },
-      {
-        "name": "land.listByOwner",
-        "input": {
-          "type": "object"
-        },
-        "output": {
-          "type": "object"
-        }
-      },
-      {
-        "name": "land.listMembers",
-        "input": {
-          "type": "object"
-        },
-        "output": {
-          "type": "object"
-        }
-      },
-      {
-        "name": "land.getPlayerRole",
-        "input": {
-          "type": "object"
-        },
-        "output": {
-          "type": "object"
-        }
-      },
-      {
-        "name": "land.validateBox",
-        "input": {
-          "type": "object"
-        },
-        "output": {
-          "type": "object"
-        }
+        "output": {}
       },
       {
         "name": "land.createLease",
         "input": {
-          "type": "object"
-        },
-        "output": {
-          "type": "object"
-        }
-      },
-      {
-        "name": "land.renewLease",
-        "input": {
-          "type": "object"
+          "type": "object",
+          "properties": {
+            "playerId": {
+              "type": "string"
+            },
+            "dimension": {
+              "type": "string"
+            },
+            "shape": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": ["cuboid", "cylinder"]
+                },
+                "min": {
+                  "type": "object",
+                  "properties": {
+                    "x": {
+                      "type": "number"
+                    },
+                    "y": {
+                      "type": "number"
+                    },
+                    "z": {
+                      "type": "number"
+                    }
+                  },
+                  "required": ["x", "y", "z"]
+                },
+                "max": {
+                  "type": "object",
+                  "properties": {
+                    "x": {
+                      "type": "number"
+                    },
+                    "y": {
+                      "type": "number"
+                    },
+                    "z": {
+                      "type": "number"
+                    }
+                  },
+                  "required": ["x", "y", "z"]
+                },
+                "radius": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "required": ["type", "min", "max"]
+            },
+            "core": {
+              "type": "object",
+              "properties": {
+                "x": {
+                  "type": "number"
+                },
+                "y": {
+                  "type": "number"
+                },
+                "z": {
+                  "type": "number"
+                }
+              },
+              "required": ["x", "y", "z"]
+            },
+            "days": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 90
+            },
+            "requestId": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 128
+            },
+            "version": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "expectedFee": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "playerId",
+            "dimension",
+            "days",
+            "requestId",
+            "expectedFee"
+          ]
         },
         "output": {
           "type": "object"
@@ -133,25 +213,79 @@
       {
         "name": "land.expandLease",
         "input": {
-          "type": "object"
-        },
-        "output": {
-          "type": "object"
-        }
-      },
-      {
-        "name": "land.terminateLease",
-        "input": {
-          "type": "object"
-        },
-        "output": {
-          "type": "object"
-        }
-      },
-      {
-        "name": "land.teleport",
-        "input": {
-          "type": "object"
+          "type": "object",
+          "properties": {
+            "playerId": {
+              "type": "string"
+            },
+            "landId": {
+              "type": "string"
+            },
+            "requestId": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 128
+            },
+            "version": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "shape": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": ["cuboid", "cylinder"]
+                },
+                "min": {
+                  "type": "object",
+                  "properties": {
+                    "x": {
+                      "type": "number"
+                    },
+                    "y": {
+                      "type": "number"
+                    },
+                    "z": {
+                      "type": "number"
+                    }
+                  },
+                  "required": ["x", "y", "z"]
+                },
+                "max": {
+                  "type": "object",
+                  "properties": {
+                    "x": {
+                      "type": "number"
+                    },
+                    "y": {
+                      "type": "number"
+                    },
+                    "z": {
+                      "type": "number"
+                    }
+                  },
+                  "required": ["x", "y", "z"]
+                },
+                "radius": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "required": ["type", "min", "max"]
+            },
+            "expectedFee": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "playerId",
+            "landId",
+            "shape",
+            "requestId",
+            "expectedFee"
+          ]
         },
         "output": {
           "type": "object"
@@ -160,52 +294,197 @@
       {
         "name": "land.leaseStatus",
         "input": {
-          "type": "object"
+          "type": "object",
+          "properties": {
+            "landId": {
+              "type": "string"
+            }
+          },
+          "required": ["landId"]
         },
         "output": {
           "type": "object"
         }
       },
       {
-        "name": "land.getPerks",
+        "name": "land.listByOwner",
         "input": {
-          "type": "object"
+          "type": "object",
+          "properties": {
+            "ownerId": {
+              "type": "string"
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            },
+            "offset": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "required": ["ownerId"]
         },
         "output": {
           "type": "object"
         }
       },
       {
-        "name": "land.setPerk",
+        "name": "land.rename",
         "input": {
-          "type": "object"
+          "type": "object",
+          "properties": {
+            "playerId": {
+              "type": "string"
+            },
+            "landId": {
+              "type": "string"
+            },
+            "requestId": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 128
+            },
+            "version": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 32
+            }
+          },
+          "required": ["playerId", "landId", "name", "requestId"]
         },
         "output": {
           "type": "object"
         }
       },
       {
-        "name": "land.guestbook.list",
+        "name": "land.renewLease",
         "input": {
-          "type": "object"
+          "type": "object",
+          "properties": {
+            "playerId": {
+              "type": "string"
+            },
+            "landId": {
+              "type": "string"
+            },
+            "requestId": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 128
+            },
+            "expectedFee": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "days": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 90
+            },
+            "version": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "required": ["playerId", "landId", "requestId", "expectedFee"]
         },
         "output": {
           "type": "object"
         }
       },
       {
-        "name": "land.guestbook.sign",
+        "name": "land.terminateLease",
         "input": {
-          "type": "object"
+          "type": "object",
+          "properties": {
+            "playerId": {
+              "type": "string"
+            },
+            "landId": {
+              "type": "string"
+            },
+            "requestId": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 128
+            },
+            "version": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "required": ["playerId", "landId", "requestId"]
         },
         "output": {
           "type": "object"
         }
       },
       {
-        "name": "land.auditLog",
+        "name": "land.ui.beginSelection",
         "input": {
+          "type": "object",
+          "properties": {
+            "playerId": {
+              "type": "string"
+            }
+          },
+          "required": ["playerId"]
+        },
+        "output": {
           "type": "object"
+        }
+      },
+      {
+        "name": "land.ui.createLease",
+        "input": {
+          "type": "object",
+          "properties": {
+            "playerId": {
+              "type": "string"
+            },
+            "daysOption": {
+              "type": "integer",
+              "enum": [7, 14, 30, 90, 0]
+            },
+            "customDays": {
+              "type": "string"
+            },
+            "shapeType": {
+              "type": "string",
+              "enum": ["cuboid", "cylinder"]
+            },
+            "x": {
+              "type": "string"
+            },
+            "y": {
+              "type": "string"
+            },
+            "z": {
+              "type": "string"
+            },
+            "length": {
+              "type": "string"
+            },
+            "width": {
+              "type": "string"
+            },
+            "height": {
+              "type": "string"
+            },
+            "radius": {
+              "type": "string"
+            },
+            "quoteId": {
+              "type": "string"
+            }
+          },
+          "required": ["playerId", "daysOption", "quoteId"]
         },
         "output": {
           "type": "object"
@@ -213,64 +492,306 @@
       },
       {
         "name": "land.ui.detail",
-        "input": { "type": "object" },
-        "output": { "type": "object" }
-      },
-      {
-        "name": "land.ui.renew",
-        "input": { "type": "object" },
-        "output": { "type": "object" }
-      },
-      {
-        "name": "land.ui.previewExpand",
-        "input": { "type": "object" },
-        "output": { "type": "object" }
+        "input": {
+          "type": "object",
+          "properties": {
+            "playerId": {
+              "type": "string"
+            },
+            "landId": {
+              "type": "string"
+            }
+          },
+          "required": ["playerId", "landId"]
+        },
+        "output": {
+          "type": "object"
+        }
       },
       {
         "name": "land.ui.expand",
-        "input": { "type": "object" },
-        "output": { "type": "object" }
-      },
-      {
-        "name": "land.ui.terminate",
-        "input": { "type": "object" },
-        "output": { "type": "object" }
-      },
-      {
-        "name": "land.ui.perks",
-        "input": { "type": "object" },
-        "output": { "type": "object" }
-      },
-      {
-        "name": "land.ui.togglePerk",
-        "input": { "type": "object" },
-        "output": { "type": "object" }
+        "input": {
+          "type": "object",
+          "properties": {
+            "playerId": {
+              "type": "string"
+            },
+            "landId": {
+              "type": "string"
+            },
+            "level": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "quoteId": {
+              "type": "string"
+            }
+          },
+          "required": ["playerId", "landId", "level", "quoteId"]
+        },
+        "output": {
+          "type": "object"
+        }
       },
       {
         "name": "land.ui.leaseDraft",
-        "input": { "type": "object" },
-        "output": { "type": "object" }
+        "input": {
+          "type": "object",
+          "properties": {
+            "playerId": {
+              "type": "string"
+            }
+          },
+          "required": ["playerId"]
+        },
+        "output": {
+          "type": "object"
+        }
+      },
+      {
+        "name": "land.ui.previewExpand",
+        "input": {
+          "type": "object",
+          "properties": {
+            "playerId": {
+              "type": "string"
+            },
+            "landId": {
+              "type": "string"
+            },
+            "level": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "required": ["playerId", "landId", "level"]
+        },
+        "output": {
+          "type": "object"
+        }
       },
       {
         "name": "land.ui.previewLease",
-        "input": { "type": "object" },
-        "output": { "type": "object" }
+        "input": {
+          "type": "object",
+          "properties": {
+            "playerId": {
+              "type": "string"
+            },
+            "daysOption": {
+              "type": "integer",
+              "enum": [7, 14, 30, 90, 0]
+            },
+            "customDays": {
+              "type": "string"
+            },
+            "shapeType": {
+              "type": "string",
+              "enum": ["cuboid", "cylinder"]
+            },
+            "x": {
+              "type": "string"
+            },
+            "y": {
+              "type": "string"
+            },
+            "z": {
+              "type": "string"
+            },
+            "length": {
+              "type": "string"
+            },
+            "width": {
+              "type": "string"
+            },
+            "height": {
+              "type": "string"
+            },
+            "radius": {
+              "type": "string"
+            }
+          },
+          "required": ["playerId", "daysOption"]
+        },
+        "output": {
+          "type": "object"
+        }
       },
       {
-        "name": "land.ui.createLease",
-        "input": { "type": "object" },
-        "output": { "type": "object" }
+        "name": "land.ui.previewRenew",
+        "input": {
+          "type": "object",
+          "properties": {
+            "playerId": {
+              "type": "string"
+            },
+            "landId": {
+              "type": "string"
+            },
+            "daysOption": {
+              "type": "integer",
+              "enum": [7, 14, 30, 90, 0]
+            },
+            "customDays": {
+              "type": "string"
+            }
+          },
+          "required": ["playerId", "landId", "daysOption"]
+        },
+        "output": {
+          "type": "object"
+        }
       },
       {
-        "name": "land.ui.teleportByName",
-        "input": { "type": "object" },
-        "output": { "type": "object" }
+        "name": "land.ui.rename",
+        "input": {
+          "type": "object",
+          "properties": {
+            "playerId": {
+              "type": "string"
+            },
+            "landId": {
+              "type": "string"
+            },
+            "requestId": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 128
+            },
+            "version": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 32
+            }
+          },
+          "required": ["playerId", "landId", "name", "requestId", "version"]
+        },
+        "output": {
+          "type": "object"
+        }
+      },
+      {
+        "name": "land.ui.renew",
+        "input": {
+          "type": "object",
+          "properties": {
+            "playerId": {
+              "type": "string"
+            },
+            "landId": {
+              "type": "string"
+            },
+            "daysOption": {
+              "type": "integer",
+              "enum": [7, 14, 30, 90, 0]
+            },
+            "customDays": {
+              "type": "string"
+            },
+            "quoteId": {
+              "type": "string"
+            }
+          },
+          "required": ["playerId", "landId", "daysOption", "quoteId"]
+        },
+        "output": {
+          "type": "object"
+        }
+      },
+      {
+        "name": "land.ui.terminate",
+        "input": {
+          "type": "object",
+          "properties": {
+            "playerId": {
+              "type": "string"
+            },
+            "landId": {
+              "type": "string"
+            },
+            "requestId": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 128
+            }
+          },
+          "required": ["playerId", "landId", "requestId"]
+        },
+        "output": {
+          "type": "object"
+        }
+      },
+      {
+        "name": "land.validateShape",
+        "input": {
+          "type": "object",
+          "properties": {
+            "ownerId": {
+              "type": "string"
+            },
+            "dimension": {
+              "type": "string"
+            },
+            "shape": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": ["cuboid", "cylinder"]
+                },
+                "min": {
+                  "type": "object",
+                  "properties": {
+                    "x": {
+                      "type": "number"
+                    },
+                    "y": {
+                      "type": "number"
+                    },
+                    "z": {
+                      "type": "number"
+                    }
+                  },
+                  "required": ["x", "y", "z"]
+                },
+                "max": {
+                  "type": "object",
+                  "properties": {
+                    "x": {
+                      "type": "number"
+                    },
+                    "y": {
+                      "type": "number"
+                    },
+                    "z": {
+                      "type": "number"
+                    }
+                  },
+                  "required": ["x", "y", "z"]
+                },
+                "radius": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "required": ["type", "min", "max"]
+            },
+            "excludeLandId": {
+              "type": "string"
+            }
+          },
+          "required": ["ownerId", "dimension", "shape"]
+        },
+        "output": {
+          "type": "object"
+        }
       }
     ],
     "requires": [
-      {
-        "name": "economy.account.get"
-      },
       {
         "name": "economy.account.debit"
       },
@@ -282,17 +803,8 @@
       },
       {
         "name": "activity.query"
-      },
-      {
-        "name": "area.registerArea"
-      },
-      {
-        "name": "area.unregisterArea"
-      },
-      {
-        "name": "area.registerFeature"
       }
     ]
   },
-  "notes": "只租不卖；DebugBox/DebugText；area+activity+economy 闭环；玩家界面由声明式 JSON 定义。"
+  "notes": "线框预览要求宿主行为包声明 @minecraft/debug-utilities 1.0.0-beta，并启用对应 Beta API。新形状结构不兼容旧领地数据。"
 }

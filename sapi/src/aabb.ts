@@ -29,14 +29,6 @@ export function blockVolume(box: Aabb): number {
   return Math.max(0, dx) * Math.max(0, dy) * Math.max(0, dz);
 }
 
-/** 水平占地面积（含端点）。 */
-export function footprintBlocks(box: Aabb): number {
-  const b = normalizeAabb(box);
-  const dx = Math.floor(b.max.x) - Math.floor(b.min.x) + 1;
-  const dz = Math.floor(b.max.z) - Math.floor(b.min.z) + 1;
-  return Math.max(0, dx) * Math.max(0, dz);
-}
-
 /** 两 AABB 是否相交（含边界相贴视为冲突）。 */
 export function aabbIntersects(a: Aabb, b: Aabb): boolean {
   const A = normalizeAabb(a);
@@ -62,17 +54,4 @@ export function pointInAabb(p: Vec3, box: Aabb): boolean {
     p.z >= b.min.z &&
     p.z <= b.max.z
   );
-}
-
-/** 由中心与半径生成竖直通天领地盒。 */
-export function totemBoxFromCore(
-  core: Vec3,
-  radius: number,
-  yMin = -64,
-  yMax = 320,
-): Aabb {
-  return normalizeAabb({
-    min: { x: core.x - radius, y: yMin, z: core.z - radius },
-    max: { x: core.x + radius, y: yMax, z: core.z + radius },
-  });
 }

@@ -3,7 +3,7 @@
  */
 
 import { debug } from "@sfmc-bds/sdk/sapi/runtime";
-import { service } from "@sfmc-bds/sdk/sapi/service";
+import { getLandService } from "./clients.js";
 
 export async function economyDebit(opts: {
   accountId: string;
@@ -16,7 +16,7 @@ export async function economyDebit(opts: {
 }): Promise<{ ok: boolean; balance?: number; error?: string }> {
   if (opts.amount <= 0) return { ok: true, balance: undefined };
   try {
-    const res = (await service.call("economy.account.debit", {
+    const res = (await getLandService().call("economy.account.debit", {
       accountId: opts.accountId,
       playerId: opts.accountId,
       amount: opts.amount,
@@ -45,7 +45,7 @@ export async function economyCredit(opts: {
 }): Promise<{ ok: boolean; error?: string }> {
   if (opts.amount <= 0) return { ok: true };
   try {
-    await service.call("economy.account.credit", {
+    await getLandService().call("economy.account.credit", {
       accountId: opts.accountId,
       playerId: opts.accountId,
       amount: opts.amount,
@@ -75,7 +75,7 @@ export async function activityRecord(input: {
   payload?: Record<string, unknown>;
 }): Promise<void> {
   try {
-    await service.call("activity.record", {
+    await getLandService().call("activity.record", {
       eventType: input.eventType,
       actorId: input.actorId,
       actorName: input.actorName,
@@ -100,7 +100,7 @@ export async function activityQuery(input: Record<string, unknown>): Promise<{
   total: number;
 }> {
   try {
-    const res = (await service.call("activity.query", input)) as {
+    const res = (await getLandService().call("activity.query", input)) as {
       records?: unknown[];
       total?: number;
     };
