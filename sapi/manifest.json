@@ -2,7 +2,7 @@
   "$schema": "https://cdn.jsdelivr.net/gh/DogeLakeDev/ScriptsForMinecraftServer@main/modules/sdk/@sfmc-sdk/schemas/sapi-manifest.v2.schema.json",
   "schemaVersion": 2,
   "id": "land",
-  "name": "Land",
+  "name": "领地",
   "configKey": "land",
   "requires": ["economy", "activity-log"],
   "permissions": [

@@ -147,8 +147,14 @@ function levelRule(raw: unknown, fallback: LevelRule): LevelRule {
     members: num(row.members, fallback.members),
     areas: num(row.areas, fallback.areas),
     roles: num(row.roles, fallback.roles),
-    claimPriceMultiplier: num(row.claim_price_multiplier ?? row.claimPriceMultiplier, fallback.claimPriceMultiplier),
-    upkeepMultiplier: num(row.upkeep_multiplier ?? row.upkeepMultiplier, fallback.upkeepMultiplier),
+    claimPriceMultiplier: num(
+      row.claim_price_multiplier ?? row.claimPriceMultiplier,
+      fallback.claimPriceMultiplier,
+    ),
+    upkeepMultiplier: num(
+      row.upkeep_multiplier ?? row.upkeepMultiplier,
+      fallback.upkeepMultiplier,
+    ),
     cost: num(row.cost, fallback.cost),
     minChunks: num(row.min_chunks ?? row.minChunks, fallback.minChunks),
     minMembers: num(row.min_members ?? row.minMembers, fallback.minMembers),
@@ -166,38 +172,91 @@ export function mergeLandConfig(raw?: unknown): LandConfig {
   const src = raw as Record<string, unknown>;
   const quotasRaw = (src.quotas ?? {}) as Record<string, unknown>;
   const levelsRaw = Array.isArray(src.levels) ? src.levels : null;
-  const groupsRaw = Array.isArray(src.quota_groups) ? src.quota_groups : Array.isArray(src.quotaGroups) ? src.quotaGroups : [];
+  const groupsRaw =
+    Array.isArray(src.quota_groups) ? src.quota_groups
+    : Array.isArray(src.quotaGroups) ? src.quotaGroups
+    : [];
   const locale = src.locale === "en" ? "en" : "zh";
   return {
     locale,
     claimPrice: Math.max(0, Math.round(num(src.claim_price, base.claimPrice))),
-    unclaimRefundRatio: Math.min(1, Math.max(0, num(src.unclaim_refund_ratio, base.unclaimRefundRatio))),
-    teleportPrice: Math.max(0, Math.round(num(src.teleport_price, base.teleportPrice))),
-    teleportCooldownMs: Math.max(0, num(src.teleport_cooldown_ms, base.teleportCooldownMs)),
-    maxBatchChunks: Math.max(1, Math.round(num(src.max_batch_chunks, base.maxBatchChunks))),
-    upkeepPeriodMs: Math.max(60_000, num(src.upkeep_period_ms, base.upkeepPeriodMs)),
+    unclaimRefundRatio: Math.min(
+      1,
+      Math.max(0, num(src.unclaim_refund_ratio, base.unclaimRefundRatio)),
+    ),
+    teleportPrice: Math.max(
+      0,
+      Math.round(num(src.teleport_price, base.teleportPrice)),
+    ),
+    teleportCooldownMs: Math.max(
+      0,
+      num(src.teleport_cooldown_ms, base.teleportCooldownMs),
+    ),
+    maxBatchChunks: Math.max(
+      1,
+      Math.round(num(src.max_batch_chunks, base.maxBatchChunks)),
+    ),
+    upkeepPeriodMs: Math.max(
+      60_000,
+      num(src.upkeep_period_ms, base.upkeepPeriodMs),
+    ),
     upkeepBase: Math.max(0, Math.round(num(src.upkeep_base, base.upkeepBase))),
-    upkeepPerChunk: Math.max(0, Math.round(num(src.upkeep_per_chunk, base.upkeepPerChunk))),
+    upkeepPerChunk: Math.max(
+      0,
+      Math.round(num(src.upkeep_per_chunk, base.upkeepPerChunk)),
+    ),
     gracePeriodMs: Math.max(0, num(src.grace_period_ms, base.gracePeriodMs)),
     freezeAfterGrace: bool(src.freeze_after_grace, base.freezeAfterGrace),
-    wildernessProtected: bool(src.wilderness_protected, base.wildernessProtected),
+    wildernessProtected: bool(
+      src.wilderness_protected,
+      base.wildernessProtected,
+    ),
     banEject: bool(src.ban_eject, base.banEject),
-    borderRadiusChunks: Math.max(0, Math.round(num(src.border_radius_chunks, base.borderRadiusChunks))),
-    borderIntervalTicks: Math.max(10, Math.round(num(src.border_interval_ticks, base.borderIntervalTicks))),
-    scanIntervalTicks: Math.max(5, Math.round(num(src.scan_interval_ticks, base.scanIntervalTicks))),
-    schedulerIntervalTicks: Math.max(200, Math.round(num(src.scheduler_interval_ticks, base.schedulerIntervalTicks))),
+    borderRadiusChunks: Math.max(
+      0,
+      Math.round(num(src.border_radius_chunks, base.borderRadiusChunks)),
+    ),
+    borderIntervalTicks: Math.max(
+      10,
+      Math.round(num(src.border_interval_ticks, base.borderIntervalTicks)),
+    ),
+    scanIntervalTicks: Math.max(
+      5,
+      Math.round(num(src.scan_interval_ticks, base.scanIntervalTicks)),
+    ),
+    schedulerIntervalTicks: Math.max(
+      200,
+      Math.round(
+        num(src.scheduler_interval_ticks, base.schedulerIntervalTicks),
+      ),
+    ),
     quotas: {
       lands: Math.max(0, Math.round(num(quotasRaw.lands, base.quotas.lands))),
-      chunks: Math.max(1, Math.round(num(quotasRaw.chunks, base.quotas.chunks))),
-      members: Math.max(0, Math.round(num(quotasRaw.members, base.quotas.members))),
+      chunks: Math.max(
+        1,
+        Math.round(num(quotasRaw.chunks, base.quotas.chunks)),
+      ),
+      members: Math.max(
+        0,
+        Math.round(num(quotasRaw.members, base.quotas.members)),
+      ),
       areas: Math.max(0, Math.round(num(quotasRaw.areas, base.quotas.areas))),
       roles: Math.max(0, Math.round(num(quotasRaw.roles, base.quotas.roles))),
     },
-    levels: levelsRaw
-      ? levelsRaw.map((item, index) => levelRule(item, base.levels[Math.min(index, base.levels.length - 1)]!))
+    levels:
+      levelsRaw ?
+        levelsRaw.map((item, index) =>
+          levelRule(
+            item,
+            base.levels[Math.min(index, base.levels.length - 1)]!,
+          ),
+        )
       : base.levels.map((item) => ({ ...item })),
     quotaGroups: groupsRaw
-      .filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === "object")
+      .filter(
+        (item): item is Record<string, unknown> =>
+          Boolean(item) && typeof item === "object",
+      )
       .map((item) => ({
         permission: typeof item.permission === "string" ? item.permission : "",
         ...(typeof item.level === "number" ? { level: item.level } : {}),
@@ -209,19 +268,30 @@ export function mergeLandConfig(raw?: unknown): LandConfig {
       }))
       .filter((item) => item.permission.length > 0),
     messages:
-      src.messages && typeof src.messages === "object" && !Array.isArray(src.messages)
-        ? (src.messages as Record<string, Record<string, string>>)
-        : {},
+      (
+        src.messages &&
+        typeof src.messages === "object" &&
+        !Array.isArray(src.messages)
+      ) ?
+        (src.messages as Record<string, Record<string, string>>)
+      : {},
   };
 }
 
 /** 按等级号查找规则。缺失时使用 1 级，避免坏配置把上限变成无限。 */
 export function levelRuleOf(config: LandConfig, level: number): LevelRule {
-  return config.levels.find((item) => item.level === level) ?? config.levels[0] ?? DEFAULT_LAND_CONFIG.levels[0]!;
+  return (
+    config.levels.find((item) => item.level === level) ??
+    config.levels[0] ??
+    DEFAULT_LAND_CONFIG.levels[0]!
+  );
 }
 
 /** 下一等级规则。没有则表示已经满级。 */
-export function nextLevelRule(config: LandConfig, level: number): LevelRule | undefined {
+export function nextLevelRule(
+  config: LandConfig,
+  level: number,
+): LevelRule | undefined {
   return config.levels
     .filter((item) => item.level > level)
     .sort((a, b) => a.level - b.level)[0];

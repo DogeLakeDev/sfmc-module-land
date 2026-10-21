@@ -50,6 +50,7 @@ SFMC 的区块领地模块。一个 Land 拥有多个维度中的 Chunk；普通
 pnpm install --frozen-lockfile
 pnpm run typecheck
 pnpm run lint
+pnpm run lint
 pnpm run test
 ```
 
