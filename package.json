@@ -1,9 +1,9 @@
 {
   "name": "@sfmc-bds/module-land",
-  "version": "0.2.2",
+  "version": "1.0.0",
   "packageManager": "pnpm@10.8.0",
   "type": "module",
-  "description": "SAPI module: 土地租赁契约（只租不卖）与庄园生态",
+  "description": "SAPI module: 区块领地、三维子区域、成员角色与领地银行",
   "license": "ISC",
   "repository": "git+https://github.com/Tanya7z/sfmc-module-land.git",
   "main": "sapi/src/index.ts",
@@ -13,15 +13,16 @@
   "files": [
     "sapi",
     "configs-default",
-    "test",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "README.en.md",
+    "docs"
   ],
   "scripts": {
     "build": "pnpm run typecheck",
     "typecheck": "tsc --noEmit -p sapi/tsconfig.json",
-    "test": "node --test --import tsx/esm test/*.test.ts",
-    "lint": "eslint \"sapi/**/*.ts\" \"test/**/*.ts\"",
+    "test": "node --test test/*.test.cjs test/*.test.mjs",
+    "lint": "eslint \"sapi/**/*.ts\"",
     "format": "prettier --write ."
   },
   "devDependencies": {
@@ -30,18 +31,17 @@
     "@minecraft/server-ui": "2.3.0-beta.1.26.51-stable",
     "@minecraft/vanilla-data": "1.26.51",
     "@sfmc-bds/eslint-plugin": "^0.1.1-beta.3",
-    "@sfmc-bds/sdk": "^0.2.0-beta.17",
+    "@sfmc-bds/sdk": "^0.5.0",
     "@types/node": "^22.13.0",
     "@typescript-eslint/eslint-plugin": "^8.64.0",
     "@typescript-eslint/parser": "^8.64.0",
     "eslint": "^10.7.0",
     "prettier": "^3.9.5",
     "prettier-plugin-organize-imports": "^4.3.0",
-    "tsx": "^4.19.0",
     "typescript": "^5.6.0"
   },
   "peerDependencies": {
-    "@sfmc-bds/sdk": ">=0.2.0-beta.17"
+    "@sfmc-bds/sdk": ">=0.5.0"
   },
   "publishConfig": {
     "access": "public",

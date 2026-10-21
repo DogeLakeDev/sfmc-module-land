@@ -1,43 +1,69 @@
 {
-  "base_daily_rent": 10,
-  "rent_per_100_blocks": 2,
-  "max_lands_per_player": 5,
-  "land_count_multiplier": [1.0, 1.5, 2.0, 3.0, 3.0],
-  "long_term_discounts": {
-    "30": 0.9,
-    "90": 0.8
+  "locale": "zh",
+  "claim_price": 50,
+  "unclaim_refund_ratio": 0,
+  "teleport_price": 0,
+  "teleport_cooldown_ms": 10000,
+  "max_batch_chunks": 48,
+  "upkeep_period_ms": 86400000,
+  "upkeep_base": 10,
+  "upkeep_per_chunk": 2,
+  "grace_period_ms": 259200000,
+  "freeze_after_grace": true,
+  "wilderness_protected": false,
+  "ban_eject": false,
+  "border_radius_chunks": 2,
+  "border_interval_ticks": 40,
+  "scan_interval_ticks": 20,
+  "scheduler_interval_ticks": 6000,
+  "quotas": {
+    "lands": 3,
+    "chunks": 16,
+    "members": 10,
+    "areas": 8,
+    "roles": 8
   },
-  "grace_period_days": 7,
-  "default_claim_mode": "vertical",
-  "totem": {
-    "item_type": "minecraft:respawn_anchor",
-    "item_name": "§e§l守护基石 §7[放置即起租]",
-    "initial_radius": 16,
-    "max_level": 5,
-    "level_radius": [16, 24, 32, 48, 64]
-  },
-  "mineral_rates": {
-    "minecraft:coal": 0.5,
-    "minecraft:iron_ingot": 2,
-    "minecraft:gold_ingot": 5,
-    "minecraft:emerald": 20,
-    "minecraft:diamond": 30
-  },
-  "plaza": {
-    "name": "自由广场",
-    "welcome": "欢迎来到公共安全广场",
-    "dimension": "minecraft:overworld",
-    "range": [0, 64, 0, 100, 128, 100]
-  },
-  "default_permissions": {
-    "allow_place": true,
-    "allow_destroy": true,
-    "attack_entity": true,
-    "open_container": true,
-    "use_door": true,
-    "use_button": true,
-    "use_redstone": true,
-    "interact_entity": true,
-    "pickup_item": true
-  }
+  "levels": [
+    {
+      "level": 1,
+      "chunks": 16,
+      "members": 10,
+      "areas": 8,
+      "roles": 8,
+      "claim_price_multiplier": 1,
+      "upkeep_multiplier": 1,
+      "cost": 0,
+      "min_chunks": 0,
+      "min_members": 0,
+      "reward": 0
+    },
+    {
+      "level": 2,
+      "chunks": 32,
+      "members": 20,
+      "areas": 16,
+      "roles": 12,
+      "claim_price_multiplier": 1.25,
+      "upkeep_multiplier": 1.1,
+      "cost": 500,
+      "min_chunks": 8,
+      "min_members": 1,
+      "reward": 0
+    },
+    {
+      "level": 3,
+      "chunks": 64,
+      "members": 40,
+      "areas": 32,
+      "roles": 16,
+      "claim_price_multiplier": 1.5,
+      "upkeep_multiplier": 1.25,
+      "cost": 2000,
+      "min_chunks": 24,
+      "min_members": 3,
+      "reward": 100
+    }
+  ],
+  "quota_groups": [],
+  "messages": {}
 }

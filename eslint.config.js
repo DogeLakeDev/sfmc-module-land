@@ -33,11 +33,4 @@ export default [
       ...sfmc.configs.recommended.rules,
     },
   },
-  {
-    /* 旧版 eslint-plugin 静态白名单可能未含 testing；测试文件允许 SDK testing 入口 */
-    files: ["test/**/*.ts"],
-    rules: {
-      "@sfmc-bds/no-sdk-private-export": "off",
-    },
-  },
 ];

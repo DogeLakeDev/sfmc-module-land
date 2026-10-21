@@ -4,295 +4,95 @@
   "id": "land",
   "name": "Land",
   "configKey": "land",
-  "enabledByDefault": true,
-  "canDisable": true,
   "requires": ["economy", "activity-log"],
   "permissions": [
     "config:read:land",
-    "db:read:sfmc_lands",
-    "db:write:sfmc_lands",
-    "db:read:sfmc_land_members",
-    "db:write:sfmc_land_members",
-    "db:read:sfmc_land_perks",
-    "db:write:sfmc_land_perks",
-    "db:read:sfmc_land_guestbook",
-    "db:write:sfmc_land_guestbook",
-    "db:read:sfmc_land_operations",
-    "db:write:sfmc_land_operations",
-    "service:land.byId",
-    "service:land.byPos",
-    "service:land.listByOwner",
-    "service:land.listMembers",
-    "service:land.getPlayerRole",
-    "service:land.validateBox",
-    "service:land.createLease",
-    "service:land.renewLease",
-    "service:land.expandLease",
-    "service:land.terminateLease",
-    "service:land.teleport",
-    "service:land.leaseStatus",
-    "service:land.getPerks",
-    "service:land.setPerk",
-    "service:land.guestbook.list",
-    "service:land.guestbook.sign",
-    "service:land.auditLog",
-    "service:land.ui.detail",
-    "service:land.ui.renew",
-    "service:land.ui.previewExpand",
-    "service:land.ui.expand",
-    "service:land.ui.terminate",
-    "service:land.ui.perks",
-    "service:land.ui.togglePerk",
-    "service:land.ui.leaseDraft",
-    "service:land.ui.previewLease",
-    "service:land.ui.createLease",
-    "service:land.ui.teleportByName",
+    "db:read:land2_land",
+    "db:write:land2_land",
+    "db:read:land2_claim",
+    "db:write:land2_claim",
+    "db:read:land2_area",
+    "db:write:land2_area",
+    "db:read:land2_role",
+    "db:write:land2_role",
+    "db:read:land2_member",
+    "db:write:land2_member",
+    "db:read:land2_area_role",
+    "db:write:land2_area_role",
+    "db:read:land2_flag",
+    "db:write:land2_flag",
+    "db:read:land2_tx",
+    "db:write:land2_tx",
+    "db:read:land2_lease",
+    "db:write:land2_lease",
+    "db:read:land2_listing",
+    "db:write:land2_listing",
+    "db:read:land2_registry",
+    "db:write:land2_registry",
+    "db:read:land2_identity",
+    "db:write:land2_identity",
+    "db:read:land2_reward",
+    "db:write:land2_reward",
+    "service:land.here",
+    "service:land.get",
+    "service:land.list",
+    "service:land.permission",
+    "service:land.create",
+    "service:land.delete",
+    "service:land.claim",
+    "service:land.role.create",
+    "service:land.role.grant",
+    "service:land.role.revoke",
+    "service:land.role.assign",
+    "service:land.role.delete",
+    "service:land.flag.set",
+    "service:land.member.invite",
+    "service:land.registry.permission",
+    "service:land.registry.flag",
+    "service:land.registry.quota",
+    "service:land.registry.condition",
+    "service:land.registry.reward",
+    "service:land.registry.hostile",
+    "service:land.event.subscribe",
+    "service:land.event.unsubscribe",
     "service:economy.account.get",
-    "service:economy.account.debit",
     "service:economy.account.credit",
-    "service:activity.record",
-    "service:activity.query",
-    "service:area.registerArea",
-    "service:area.unregisterArea",
-    "service:area.registerFeature"
+    "service:economy.account.debit",
+    "service:economy.account.transfer",
+    "service:activity.record"
   ],
   "services": {
     "provides": [
-      {
-        "name": "land.byId",
-        "input": {
-          "type": "object"
-        },
-        "output": {
-          "type": "object"
-        }
-      },
-      {
-        "name": "land.byPos",
-        "input": {
-          "type": "object"
-        },
-        "output": {
-          "type": "object"
-        }
-      },
-      {
-        "name": "land.listByOwner",
-        "input": {
-          "type": "object"
-        },
-        "output": {
-          "type": "object"
-        }
-      },
-      {
-        "name": "land.listMembers",
-        "input": {
-          "type": "object"
-        },
-        "output": {
-          "type": "object"
-        }
-      },
-      {
-        "name": "land.getPlayerRole",
-        "input": {
-          "type": "object"
-        },
-        "output": {
-          "type": "object"
-        }
-      },
-      {
-        "name": "land.validateBox",
-        "input": {
-          "type": "object"
-        },
-        "output": {
-          "type": "object"
-        }
-      },
-      {
-        "name": "land.createLease",
-        "input": {
-          "type": "object"
-        },
-        "output": {
-          "type": "object"
-        }
-      },
-      {
-        "name": "land.renewLease",
-        "input": {
-          "type": "object"
-        },
-        "output": {
-          "type": "object"
-        }
-      },
-      {
-        "name": "land.expandLease",
-        "input": {
-          "type": "object"
-        },
-        "output": {
-          "type": "object"
-        }
-      },
-      {
-        "name": "land.terminateLease",
-        "input": {
-          "type": "object"
-        },
-        "output": {
-          "type": "object"
-        }
-      },
-      {
-        "name": "land.teleport",
-        "input": {
-          "type": "object"
-        },
-        "output": {
-          "type": "object"
-        }
-      },
-      {
-        "name": "land.leaseStatus",
-        "input": {
-          "type": "object"
-        },
-        "output": {
-          "type": "object"
-        }
-      },
-      {
-        "name": "land.getPerks",
-        "input": {
-          "type": "object"
-        },
-        "output": {
-          "type": "object"
-        }
-      },
-      {
-        "name": "land.setPerk",
-        "input": {
-          "type": "object"
-        },
-        "output": {
-          "type": "object"
-        }
-      },
-      {
-        "name": "land.guestbook.list",
-        "input": {
-          "type": "object"
-        },
-        "output": {
-          "type": "object"
-        }
-      },
-      {
-        "name": "land.guestbook.sign",
-        "input": {
-          "type": "object"
-        },
-        "output": {
-          "type": "object"
-        }
-      },
-      {
-        "name": "land.auditLog",
-        "input": {
-          "type": "object"
-        },
-        "output": {
-          "type": "object"
-        }
-      },
-      {
-        "name": "land.ui.detail",
-        "input": { "type": "object" },
-        "output": { "type": "object" }
-      },
-      {
-        "name": "land.ui.renew",
-        "input": { "type": "object" },
-        "output": { "type": "object" }
-      },
-      {
-        "name": "land.ui.previewExpand",
-        "input": { "type": "object" },
-        "output": { "type": "object" }
-      },
-      {
-        "name": "land.ui.expand",
-        "input": { "type": "object" },
-        "output": { "type": "object" }
-      },
-      {
-        "name": "land.ui.terminate",
-        "input": { "type": "object" },
-        "output": { "type": "object" }
-      },
-      {
-        "name": "land.ui.perks",
-        "input": { "type": "object" },
-        "output": { "type": "object" }
-      },
-      {
-        "name": "land.ui.togglePerk",
-        "input": { "type": "object" },
-        "output": { "type": "object" }
-      },
-      {
-        "name": "land.ui.leaseDraft",
-        "input": { "type": "object" },
-        "output": { "type": "object" }
-      },
-      {
-        "name": "land.ui.previewLease",
-        "input": { "type": "object" },
-        "output": { "type": "object" }
-      },
-      {
-        "name": "land.ui.createLease",
-        "input": { "type": "object" },
-        "output": { "type": "object" }
-      },
-      {
-        "name": "land.ui.teleportByName",
-        "input": { "type": "object" },
-        "output": { "type": "object" }
-      }
+      { "name": "land.here", "input": { "type": "object" }, "output": { "type": "object" } },
+      { "name": "land.get", "input": { "type": "object" }, "output": { "type": "object" } },
+      { "name": "land.list", "input": { "type": "object" }, "output": { "type": "object" } },
+      { "name": "land.permission", "input": { "type": "object" }, "output": { "type": "object" } },
+      { "name": "land.create", "input": { "type": "object" }, "output": { "type": "object" } },
+      { "name": "land.delete", "input": { "type": "object" }, "output": { "type": "object" } },
+      { "name": "land.claim", "input": { "type": "object" }, "output": { "type": "object" } },
+      { "name": "land.role.create", "input": { "type": "object" }, "output": { "type": "object" } },
+      { "name": "land.role.grant", "input": { "type": "object" }, "output": { "type": "object" } },
+      { "name": "land.role.revoke", "input": { "type": "object" }, "output": { "type": "object" } },
+      { "name": "land.role.assign", "input": { "type": "object" }, "output": { "type": "object" } },
+      { "name": "land.role.delete", "input": { "type": "object" }, "output": { "type": "object" } },
+      { "name": "land.flag.set", "input": { "type": "object" }, "output": { "type": "object" } },
+      { "name": "land.member.invite", "input": { "type": "object" }, "output": { "type": "object" } },
+      { "name": "land.registry.permission", "input": { "type": "object" }, "output": { "type": "object" } },
+      { "name": "land.registry.flag", "input": { "type": "object" }, "output": { "type": "object" } },
+      { "name": "land.registry.quota", "input": { "type": "object" }, "output": { "type": "object" } },
+      { "name": "land.registry.condition", "input": { "type": "object" }, "output": { "type": "object" } },
+      { "name": "land.registry.reward", "input": { "type": "object" }, "output": { "type": "object" } },
+      { "name": "land.registry.hostile", "input": { "type": "object" }, "output": { "type": "object" } },
+      { "name": "land.event.subscribe", "input": { "type": "object" }, "output": { "type": "object" } },
+      { "name": "land.event.unsubscribe", "input": { "type": "object" }, "output": { "type": "object" } }
     ],
     "requires": [
-      {
-        "name": "economy.account.get"
-      },
-      {
-        "name": "economy.account.debit"
-      },
-      {
-        "name": "economy.account.credit"
-      },
-      {
-        "name": "activity.record"
-      },
-      {
-        "name": "activity.query"
-      },
-      {
-        "name": "area.registerArea"
-      },
-      {
-        "name": "area.unregisterArea"
-      },
-      {
-        "name": "area.registerFeature"
-      }
+      { "name": "economy.account.get" },
+      { "name": "economy.account.credit" },
+      { "name": "economy.account.debit" },
+      { "name": "economy.account.transfer" },
+      { "name": "activity.record" }
     ]
   },
-  "notes": "只租不卖；DebugBox/DebugText；area+activity+economy 闭环；玩家界面由声明式 JSON 定义。"
+  "notes": "区块领地与三维子区域。不迁移 0.2 租赁表。银行账户为 land:<id>。"
 }

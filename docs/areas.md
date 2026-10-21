@@ -1,0 +1,52 @@
+# 区块与三维区域
+
+[English](areas.en.md) · [目录](README.md)
+
+## 所有权由区块决定
+
+占领记录包含 `(dimensionId, chunkX, chunkZ, landId)`，查询键为 `dimensionId|chunkX|chunkZ`，数据库对 claim_key 唯一约束。领地可以不连通、可跨维度，每个占领覆盖完整垂直空间；主领地不是一个包围所有区块的大长方体。
+
+```text
+chunkX = floor(blockX / 16)
+chunkZ = floor(blockZ / 16)
+```
+
+| Block X/Z | Chunk |
+| --- | --- |
+| -17 | -2 |
+| -16 | -1 |
+| -1 | -1 |
+| 0–15 | 0 |
+| 16 | 1 |
+
+公开服务使用 `player.dimension.id` / `dimension.id` 返回的规范ID。即使 getDimension 接受某个别名，也不会自动把已保存的占领键规范化。
+
+## 默认区域与普通区域
+
+每个领地有一个无固定边界的默认区域（`kind: default`、`box: null`），处理未落在普通Area内的已占领空间。它的空维度字段不代表荒野。普通区域属于一个领地与维度，使用三维 AABB；所有权始终来自区块占领。
+
+存储边界为半开区间，包含 min、不包含 max。玩家选中的两个端点方块均包含：选择 (0,60,0) 与 (15,69,15)，得到 min=(0,60,0)、max=(16,70,16)。坐标转为方块时向下取整。
+
+两个区域只有在三个轴均有正长度交集时才重叠；仅接触面、边或角允许。创建/调整时不同维度不重叠；不支持嵌套或优先级叠加，正常流程拒绝重叠。
+
+## 完整足迹验证
+
+整数半开边界在每轴覆盖 floor(min/16) 到 floor((max-1)/16)。其X/Z组合中的每个区块都必须属于同一领地，不只检查两个角。例如X范围[0,48)跨0、1、2区块，只占0和2不合法；[0,16)仅在边界接触1号区块，不把它算入内部。
+
+创建和调整都在写入队列内重新检查越界与重叠。释放区块时拒绝仍被普通Area使用的区块，领地最后一块也不可释放。缩小所有权前先删除或调整依赖区域。
+
+## 选区流程与限制
+
+```text
+/c:land area_pos1
+/c:land area_pos2
+/c:land area_create Home Store
+/c:land area_info Home Store
+/c:land area_member Home Store Alice Keeper
+```
+
+两个选点使用玩家位置，不是准星方块。换维度后重新设置两个点：当前缓冲区只有一个维度字段，没有分别保存每个点的原维度。选区只在内存中，不应依赖重载后保留。领域层检查非零体积与占领范围，没有额外的维度高度或体积上限策略。
+
+`area_info` 可以查看边界和维度。`border` 目前在玩家高度渲染附近已占领区块角点，不绘制Area线框。没有公开Area边界或直接创建普通Area的服务，`land.here` 只返回有效区域ID/名称。
+
+依据：[几何规则](../sapi/src/domain/geometry.ts)、[领地服务](../sapi/src/services/territory.ts)、[空间索引](../sapi/src/cache/world-index.ts)。
