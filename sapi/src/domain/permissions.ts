@@ -82,7 +82,7 @@ export const CORE_FLAGS: FlagDef[] = [
   },
   {
     id: "enter_message",
-    description: "进入领地时发送提示",
+    description: "进入领地或子区域时发送提示",
     type: "boolean",
     scope: "both",
     defaultValue: true,
@@ -90,7 +90,7 @@ export const CORE_FLAGS: FlagDef[] = [
   },
   {
     id: "leave_message",
-    description: "离开领地时发送提示",
+    description: "离开领地或子区域时发送提示",
     type: "boolean",
     scope: "both",
     defaultValue: true,
@@ -98,7 +98,7 @@ export const CORE_FLAGS: FlagDef[] = [
   },
   {
     id: "enter_text",
-    description: "进入提示模板，空字符串表示使用全局模板",
+    description: "进入提示模板（领地与子区域各用自己的值，不继承），空字符串表示使用全局模板",
     type: "string",
     scope: "both",
     defaultValue: "",
@@ -106,7 +106,7 @@ export const CORE_FLAGS: FlagDef[] = [
   },
   {
     id: "leave_text",
-    description: "离开提示模板，空字符串表示使用全局模板",
+    description: "离开提示模板（领地与子区域各用自己的值，不继承），空字符串表示使用全局模板",
     type: "string",
     scope: "both",
     defaultValue: "",

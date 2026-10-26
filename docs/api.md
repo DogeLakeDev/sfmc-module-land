@@ -2,7 +2,7 @@
 
 [English](api.en.md) · [文档目录](README.md)
 
-本模块通过 SDK 服务总线提供以下 **22 个服务**。清单中的输入/输出仅声明为 object，本页给出当前实际契约。不要通过导入内部服务文件绕过业务校验。
+本模块通过 SDK 服务总线提供以下 **23 个服务**。清单中的输入/输出仅声明为 object，本页给出当前实际契约。不要通过导入内部服务文件绕过业务校验。
 
 ## 接入与身份边界
 
@@ -80,9 +80,25 @@ type FlagDef = {
 | land.here | `{dimensionId,x,y,z}` | `{found:false}` 或下述位置结果 |
 | land.get | `{name? , landId?}` | `LandView` |
 | land.list | `{ownerId?}` | `{lands:LandSummary[]}` |
+| land.map | `{dimensionId?}` | `{lands:MapLand[]}` |
 | land.permission | `{playerId,dimensionId,x,y,z,permission}` | `Decision` |
 
 位置结果为 `{found:true,landId,landName,ownerId,areaId,areaName,specific,status}`。`specific` 表示命中普通三维区域，false 表示默认区域；`areaId` 此处是默认区域的真实 ID。`land.get` 若同时给 name 与 landId，name 优先。`land.list` 不分页。
+
+`land.map` 给网页地图等展示用途，返回全部领地的区块与子区域水平范围，按领地 ID 排序、不分页。给出 `dimensionId` 时只保留该维度的数据，并跳过在该维度没有区块和子区域的领地。不包含成员、角色、旗标与银行信息。子区域坐标是**包含两端**的方块坐标（内部半开区间的 max 已减 1）：
+
+```ts
+type MapLand = {
+  id: string; name: string; ownerId: string; ownerName: string;
+  status: "active" | "delinquent" | "frozen"; level: number;
+  claims: { dimensionId: string; chunks: [chunkX: number, chunkZ: number][] }[];
+  areas: {
+    id: string; name: string; dimensionId: string;
+    minX: number; minY: number; minZ: number;
+    maxX: number; maxY: number; maxZ: number;
+  }[];
+};
+```
 
 `Decision.allow` 是最终布尔结果，`effect` 与它一致；`resolution:"inherit"` 表示子区域回退到领地角色，不是可直接当作允许使用的第三种结果。可能的 reason 为 `not_ready, bypass, wilderness, wilderness_protected, owner, banned, frozen, delinquent, role_grant, role_deny`。
 

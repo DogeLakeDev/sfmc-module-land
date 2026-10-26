@@ -44,7 +44,7 @@ Owners pass permission resolution before bans/freezing. Server administrators ne
 
 - Command interface only; no form GUI, nations, warfare or diplomacy.
 - Areas are nonoverlapping AABBs without nesting. Border display uses nearby chunk-corner particles rather than a 3D wireframe.
-- leave_text is registered/stored but unused. Land entry/exit switches and area messages are not identical.
+- Lands and sub-areas both show entry/exit messages; enter_text / leave_text both apply, and sub-areas do not inherit the land's custom text.
 - No automatic visitor role. Permission management has no role hierarchy or grant ceiling; member.manage/role.manage holders must be trusted.
 - Write APIs trust actorId. Flag registration installs no behavior, and custom quotas are not enforced by core limits. See [API](api.en.md).
 - No cross-database economy transaction. Reissued deposits/withdrawals, paid teleport failures and reward retries have documented boundaries in [recovery](data-and-recovery.en.md).

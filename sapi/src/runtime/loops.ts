@@ -3,7 +3,9 @@
  * 都按玩家或到期时间推进，不会每个 tick 扫描全部区域。
  */
 
+import type { Player } from "@minecraft/server";
 import { system, world } from "@minecraft/server";
+import type { WorldIndex } from "../cache/world-index.js";
 import { claimKey, chunkOf } from "../domain/geometry.js";
 import { debug, Msg } from "@sfmc-bds/sdk/sapi/runtime";
 import { say } from "../messages/speak.js";
@@ -16,9 +18,12 @@ import { listTransactions } from "../store/repo.js";
 import { recoverTransactions } from "../economy/ledger.js";
 import {
   presenceEvents,
+  presenceNotices,
+  type PresenceNotice,
   type PresenceScope,
   type PresenceEvent,
 } from "./presence.js";
+import { borderShape } from "./border-shape.js";
 
 interface Presence extends PresenceScope {
   outside?: { dimensionId: string; x: number; y: number; z: number };
@@ -136,53 +141,8 @@ function scanPlayers(): void {
       player.id,
       presenceEvents(player.id, previous, { landId, areaId }),
     );
-    if (previous?.landId && previous.landId !== landId) {
-      const previousLand = index.lands.get(previous.landId);
-      if (
-        previousLand &&
-        resolveFlag(
-          index,
-          previousLand,
-          index.areas.get(previous.areaId),
-          "leave_message",
-        ) !== false
-      ) {
-        say(player, "left", { land: previousLand.name }, "tips");
-      }
-    }
-    if (located && previous?.landId !== landId) {
-      if (
-        resolveFlag(index, located.land, located.area, "enter_message") !==
-        false
-      ) {
-        const text = resolveFlag(
-          index,
-          located.land,
-          located.area,
-          "enter_text",
-        );
-        if (typeof text === "string" && text)
-          Msg.info(
-            text
-              .replaceAll("{land}", located.land.name)
-              .replaceAll("{owner}", located.land.ownerName),
-            player,
-          );
-        else
-          say(
-            player,
-            "entered",
-            { land: located.land.name, owner: located.land.ownerName },
-            "info",
-          );
-      }
-    } else if (located && previous?.areaId !== areaId && located.specific) {
-      say(
-        player,
-        "entered_area",
-        { land: located.land.name, area: located.area.name },
-        "tips",
-      );
+    for (const notice of presenceNotices(previous, { landId, areaId })) {
+      sendNotice(player, index, notice);
     }
     if (located) {
       presence.set(player.id, {
@@ -212,10 +172,52 @@ function scanPlayers(): void {
   for (const id of borders.keys()) if (!online.has(id)) borders.delete(id);
 }
 
+/**
+ * 渲染一条进出提示。
+ * 开关：enter_message / leave_message 按 resolveFlag 解析（子区域值优先，其次领地值）。
+ * 文案：只读该范围自己的 enter_text / leave_text——领地提示读领地值，子区域提示读子区域值，
+ * 互不继承；为空时使用全局文案。自定义文案支持 {land} {area} {owner} 占位符。
+ * 范围已被删除（索引中找不到）时不提示。
+ * 使用场景：scanPlayers 对 presenceNotices 的每条结果调用。
+ */
+function sendNotice(player: Player, index: WorldIndex, notice: PresenceNotice): void {
+  const land = index.lands.get(notice.scope.landId);
+  if (!land) return;
+  const area = notice.scope.areaId ? index.areas.get(notice.scope.areaId) : undefined;
+  const forArea = notice.kind === "left_area" || notice.kind === "entered_area";
+  if (forArea && !area) return;
+  const entering = notice.kind === "entered" || notice.kind === "entered_area";
+  if (resolveFlag(index, land, area, entering ? "enter_message" : "leave_message") === false) return;
+  const vars = { land: land.name, area: area?.name ?? "", owner: land.ownerName };
+  const tone = notice.kind === "entered" ? "info" : "tips";
+  const custom = index.flag(forArea && area ? area.id : land.id, entering ? "enter_text" : "leave_text");
+  if (typeof custom === "string" && custom) {
+    Msg[tone](
+      custom
+        .replaceAll("{land}", vars.land)
+        .replaceAll("{area}", vars.area)
+        .replaceAll("{owner}", vars.owner),
+      player,
+    );
+    return;
+  }
+  say(player, notice.kind, vars, tone);
+}
+
+/** 已告警过的边界粒子 ID：同一粒子生成失败只记一次日志，避免每轮刷屏。 */
+const warnedParticles = new Set<string>();
+
+/**
+ * 按配置为开启了 border 的玩家绘制附近领地外轮廓：
+ * 轮廓边按 borderStepBlocks 间距、在 borderHeights 各高度层画粒子线，拐角画竖直粒子柱；
+ * 目标领地用 borderParticle，其他领地用 borderOtherParticle（为空则不画）。
+ * 粒子只发给该玩家本人，每轮受 borderMaxParticles 限制，目标领地优先。
+ */
 function drawBorders(): void {
   const index = worldOrUndefined();
   if (!index?.ready || borders.size === 0) return;
-  const radius = landConfig().borderRadiusChunks;
+  const config = landConfig();
+  const radius = config.borderRadiusChunks;
   for (const player of world.getAllPlayers()) {
     const session = borders.get(player.id);
     if (!session) continue;
@@ -224,31 +226,64 @@ function drawBorders(): void {
       player.location.x,
       player.location.z,
     );
-    for (let dx = -radius; dx <= radius; dx += 1) {
-      for (let dz = -radius; dz <= radius; dz += 1) {
-        const key = claimKey(
-          origin.dimensionId,
-          origin.chunkX + dx,
-          origin.chunkZ + dz,
-        );
-        const landId = index.claims.get(key);
-        if (!landId) continue;
-        if (session.landId && landId !== session.landId) continue;
-        const x = (origin.chunkX + dx) * 16;
-        const z = (origin.chunkZ + dz) * 16;
-        const y = player.location.y + 0.2;
-        try {
-          player.spawnParticle("minecraft:villager_happy", { x, y, z });
-          player.spawnParticle("minecraft:villager_happy", {
-            x: x + 15,
-            y,
-            z: z + 15,
-          });
-        } catch {
-          /* 粒子标识在当前版本不可用时保持安静 */
+    const shape = borderShape(
+      (chunkX, chunkZ) =>
+        index.claims.get(claimKey(origin.dimensionId, chunkX, chunkZ)),
+      origin,
+      radius,
+      session.landId,
+      config.borderOtherParticle.length > 0,
+    );
+    const feet = player.location.y;
+    let budget = config.borderMaxParticles;
+    /** 生成一个粒子；预算用尽或生成失败返回 false，调用方据此结束本轮。 */
+    const emit = (own: boolean, x: number, y: number, z: number): boolean => {
+      if (budget <= 0) return false;
+      budget -= 1;
+      const particle = own ? config.borderParticle : config.borderOtherParticle;
+      try {
+        player.spawnParticle(particle, { x, y, z });
+        return true;
+      } catch (error) {
+        if (!warnedParticles.has(particle)) {
+          warnedParticles.add(particle);
+          debug.w(
+            "Land",
+            `边界粒子 ${particle} 生成失败: ${error instanceof Error ? error.message : String(error)}`,
+          );
+        }
+        return false;
+      }
+    };
+    const drawEdges = (own: boolean): boolean => {
+      for (const edge of shape.edges) {
+        if (edge.own !== own) continue;
+        const length = Math.hypot(edge.x2 - edge.x1, edge.z2 - edge.z1);
+        const steps = Math.max(1, Math.round(length / config.borderStepBlocks));
+        for (let i = 0; i <= steps; i += 1) {
+          const x = edge.x1 + ((edge.x2 - edge.x1) * i) / steps;
+          const z = edge.z1 + ((edge.z2 - edge.z1) * i) / steps;
+          for (const height of config.borderHeights) {
+            if (!emit(own, x, feet + height, z)) return false;
+          }
         }
       }
-    }
+      return true;
+    };
+    const drawPosts = (own: boolean): boolean => {
+      if (config.borderPostHeight <= 0) return true;
+      for (const corner of shape.corners) {
+        if (corner.own !== own) continue;
+        for (let h = 0; h <= config.borderPostHeight; h += config.borderPostStep) {
+          if (!emit(own, corner.x, feet + h, corner.z)) return false;
+        }
+      }
+      return true;
+    };
+    // 目标领地先画，预算不足时优先保证它完整
+    if (!drawEdges(true) || !drawPosts(true)) continue;
+    if (!drawEdges(false)) continue;
+    drawPosts(false);
   }
 }
 

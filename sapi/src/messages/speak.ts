@@ -34,6 +34,15 @@ export function rememberLocale(playerId: string, locale: "zh" | "en"): void {
   locales.set(playerId, locale);
 }
 
+/**
+ * 按玩家语言渲染文案但不发送。
+ * 当前用于 map 命令拼装格子与地图行，以及 say 的渲染。
+ */
+export function phrase(player: Player | undefined, key: string, vars: MessageVars = {}): string {
+  const locale = player ? (locales.get(player.id) ?? currentLocale()) : currentLocale();
+  return renderMessage(locale, key, vars, currentMessages());
+}
+
 /** 渲染给玩家或控制台。 */
 export function say(
   player: Player | undefined,
@@ -41,8 +50,7 @@ export function say(
   vars: MessageVars = {},
   tone: "info" | "success" | "error" | "warning" | "tips" = "info",
 ): string {
-  const locale = player ? (locales.get(player.id) ?? currentLocale()) : currentLocale();
-  const text = renderMessage(locale, key, vars, currentMessages());
+  const text = phrase(player, key, vars);
   if (!player) {
     debug.i("Land", text);
     return text;

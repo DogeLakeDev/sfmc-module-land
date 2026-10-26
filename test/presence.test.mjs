@@ -94,6 +94,37 @@ test("presence transitions cover adjacent lands, area fallback, wilderness and l
       }
     });
   }
+  await t.test("player-visible notices cover sub-areas and cross-land moves", () => {
+    const { presenceNotices } = rig.load("runtime/presence.ts");
+    const notices = (from, to) =>
+      plain(presenceNotices(from, to)).map(({ kind, scope: s }) => [kind, s.landId, s.areaId]);
+    assert.deepEqual(notices(undefined, undefined), []);
+    assert.deepEqual(notices(scope("a", "room"), scope("a", "room")), []);
+    assert.deepEqual(notices(scope("a"), scope("a", "room")), [["entered_area", "a", "room"]]);
+    assert.deepEqual(notices(scope("a", "room"), scope("a")), [["left_area", "a", "room"]]);
+    assert.deepEqual(notices(scope("a", "room"), scope("a", "garden")), [
+      ["left_area", "a", "room"],
+      ["entered_area", "a", "garden"],
+    ]);
+    assert.deepEqual(notices(scope("a"), scope("b")), [
+      ["left", "a", ""],
+      ["entered", "b", ""],
+    ]);
+    assert.deepEqual(notices(scope("a", "room"), scope("b", "hall")), [
+      ["left_area", "a", "room"],
+      ["left", "a", "room"],
+      ["entered", "b", "hall"],
+      ["entered_area", "b", "hall"],
+    ]);
+    assert.deepEqual(notices(undefined, scope("a", "room")), [
+      ["entered", "a", "room"],
+      ["entered_area", "a", "room"],
+    ]);
+    assert.deepEqual(notices(scope("a", "room"), undefined), [
+      ["left_area", "a", "room"],
+      ["left", "a", "room"],
+    ]);
+  });
   await t.test("logout leaves exactly the previous effective scope", () => {
     const events = plain(
       presenceEvents("player", scope("a", "room"), undefined, "offline"),

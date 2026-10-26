@@ -48,6 +48,20 @@ export function claimKey(dimensionId: string, chunkX: number, chunkZ: number): s
   return `${dimensionId}|${chunkX}|${chunkZ}`;
 }
 
+/**
+ * claimKey 的逆运算。从右侧取两段整数，剩余部分作为维度，格式不对时返回 null。
+ * 使用场景：land.map 把 LandState.claimKeys 还原成区块坐标供网页地图绘制。
+ */
+export function parseClaimKey(key: string): ChunkPos | null {
+  const zSep = key.lastIndexOf("|");
+  const xSep = zSep > 0 ? key.lastIndexOf("|", zSep - 1) : -1;
+  if (xSep <= 0) return null;
+  const chunkX = Number(key.slice(xSep + 1, zSep));
+  const chunkZ = Number(key.slice(zSep + 1));
+  if (!Number.isInteger(chunkX) || !Number.isInteger(chunkZ)) return null;
+  return { dimensionId: key.slice(0, xSep), chunkX, chunkZ };
+}
+
 /** 半开区间在某一轴上实际覆盖的区块坐标（含两端）。max 一侧的接触区块不会被算入。 */
 export function chunksOnAxis(min: number, max: number): number[] {
   if (!(max > min)) return [];

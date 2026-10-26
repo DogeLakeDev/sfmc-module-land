@@ -203,7 +203,7 @@ async function cancelListingLocked(
       item.status === "open",
   );
   if (!listing)
-    throw new LandError("land_not_found", { name: areaToken ?? token });
+    throw new LandError("listing_not_found", { name: areaToken ?? token });
   const next = { ...listing, status: "closed" as const, updatedAt: Date.now() };
   await updateListing(next);
   world().upsertListing(next);
@@ -217,10 +217,20 @@ async function takeLeaseLocked(
 ): Promise<LeaseState> {
   const land = requireLand(token);
   const area = requireArea(land, areaToken);
+  if (actor.id === land.ownerId) throw new LandError("rent_owner");
   const listing = openListing(area.id, "rent");
-  if (!listing) throw new LandError("land_not_found", { name: areaToken });
-  if (actor.id === land.ownerId)
-    throw new LandError("no_permission", { reason: "owner" });
+  if (!listing) {
+    // 挂牌被租下后即关闭：有生效租约时说明是谁租的、多久后到期，而不是笼统地说没有挂牌
+    const lease = world().activeLeases.get(area.id);
+    if (lease?.status === "active") {
+      throw new LandError("rent_taken", {
+        name: area.name,
+        tenant: lease.tenantName,
+        hours: Math.max(1, Math.ceil((lease.endAt - Date.now()) / 3_600_000)),
+      });
+    }
+    throw new LandError("rent_not_found", { name: area.name });
+  }
   if (world().member(land.id, actor.id)?.relation === "banned")
     throw new LandError("no_permission", { reason: "banned" });
   const now = Date.now();
@@ -274,7 +284,7 @@ async function renewLeaseLocked(
   const area = requireArea(land, areaToken);
   const lease = world().activeLeases.get(area.id);
   if (!lease || lease.status !== "active")
-    throw new LandError("land_not_found", { name: areaToken });
+    throw new LandError("lease_not_found", { name: area.name });
   if (
     actor.id !== lease.tenantId &&
     actor.id !== land.ownerId &&
@@ -304,7 +314,7 @@ async function endLeaseLocked(
   const land = requireLand(token);
   const area = requireArea(land, areaToken);
   const lease = world().activeLeases.get(area.id);
-  if (!lease) throw new LandError("land_not_found", { name: areaToken });
+  if (!lease) throw new LandError("lease_not_found", { name: area.name });
   if (
     actor.id !== lease.tenantId &&
     actor.id !== land.ownerId &&
@@ -329,7 +339,7 @@ async function buyLocked(
       item.status === "open",
   );
   if (!listing)
-    throw new LandError("land_not_found", { name: areaToken ?? token });
+    throw new LandError("listing_not_found", { name: areaToken ?? token });
   if (actor.id === land.ownerId)
     throw new LandError("no_permission", { reason: "owner" });
   await beforeEvent("land.before.sale", {

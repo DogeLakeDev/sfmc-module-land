@@ -82,10 +82,10 @@ Alice accepts the invitation with `/c:land accept Home`. Outside Store the land 
 | `mob_spawn` | `boolean` | `both` | `true` | Remove registered hostile entities after spawning when disabled. |
 | `pvp` | `boolean` | `both` | `false` | Deny detected player-to-player damage; enabling it still requires entity.attack. |
 | `public_teleport` | `boolean` | `land` | `false` | Allow public teleport, subject to cooldown, price, and ban checks. |
-| `enter_message` | `boolean` | `both` | `true` | Control land entry messages, not every area hint. |
-| `leave_message` | `boolean` | `both` | `true` | Control land departure messages. |
-| `enter_text` | `string` | `both` | `空 / empty` | Land-entry template with {land} and {owner}. |
-| `leave_text` | `string` | `both` | `空 / empty` | Registered and stored, but not consumed by the current loop. |
+| `enter_message` | `boolean` | `both` | `true` | Control entry messages; set on a sub-area it only affects that sub-area (area value first, then land value). |
+| `leave_message` | `boolean` | `both` | `true` | Control departure messages; resolved like `enter_message`. |
+| `enter_text` | `string` | `both` | `空 / empty` | Entry template with {land}, {area} and {owner}; lands and sub-areas each use their own value, no inheritance. |
+| `leave_text` | `string` | `both` | `空 / empty` | Departure template; same placeholders and rules as `enter_text`. |
 
 Scope both means land or box area; land-only flags reject area writes. Box area values override land values, which override registered defaults. Boolean writes accept true/false/on/off; number values must be finite. Unknown flag writes are rejected. No value means fall back, not automatically allow.
 

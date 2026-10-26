@@ -47,6 +47,6 @@ Creation and resize recheck containment/overlap inside the write queue. Unclaim 
 
 Both points use player position, not the block being looked at. Re-select both points after changing dimension: the current selection buffer has one dimension field and does not retain each point’s original dimension. Selection is in memory and must not be assumed durable across reloads. The current domain validates nonzero volume/claim coverage but has no separate dimension-height or maximum-volume policy.
 
-`area_info` exposes stored bounds and dimension. `border` currently renders nearby claimed chunk corner particles at the player’s height, not a box wireframe. There is no public area-bounds service or direct box-creation service; `land.here` returns only the effective area ID/name.
+`area_info` exposes stored bounds and dimension. `border` currently renders nearby land chunk outlines relative to the player’s height, not a box wireframe. There is no public area-bounds service or direct box-creation service; `land.here` returns only the effective area ID/name.
 
 Sources: [geometry](../sapi/src/domain/geometry.ts), [territory](../sapi/src/services/territory.ts), [index](../sapi/src/cache/world-index.ts).

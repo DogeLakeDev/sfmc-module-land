@@ -23,6 +23,13 @@
 | `ban_eject` | `false` | 扫描时将封禁者送回记录过的荒野位置；事后处理。 |
 | `border_radius_chunks` | `2` | 粒子扫描半径，单位区块。 |
 | `border_interval_ticks` | `40` | 边界粒子间隔，最小10 tick。 |
+| `border_particle` | `"minecraft:endrod"` | 目标领地轮廓的粒子 ID；空字符串回退默认值。 |
+| `border_other_particle` | `"minecraft:basic_flame_particle"` | 附近其他领地轮廓的粒子 ID；空字符串表示不显示其他领地。 |
+| `border_step_blocks` | `2` | 轮廓线上粒子间距，单位方块，最小0.5。 |
+| `border_heights` | `[0.2, 1.6]` | 轮廓线相对玩家脚底的高度层，多个值画成多层矮墙。 |
+| `border_post_height` | `3` | 拐角粒子柱高度，单位方块；0 表示不画拐角柱。 |
+| `border_post_step` | `0.5` | 拐角粒子柱竖直间距，最小0.25。 |
+| `border_max_particles` | `800` | 每名玩家每轮最多生成的边界粒子数；超出时优先保留目标领地。 |
 | `scan_interval_ticks` | `20` | 玩家范围检测间隔，最小5 tick。 |
 | `scheduler_interval_ticks` | `6000` | 维护、税费、到期和交易恢复周期，最小200 tick。 |
 | `quotas.lands` | `3` | 每位操作者的领地拥有数量上限。 |
@@ -86,6 +93,6 @@ upkeep = max(0, round((upkeep_base + upkeep_per_chunk × claimedChunks) × level
 }
 ```
 
-使用 [catalog.ts](../sapi/src/messages/catalog.ts) 中现有键和占位符。玩家语言偏好会持久化。`enter_text` 支持 `{land}` 与 `{owner}`；注册表中的 `leave_text` 目前未被进出循环读取。
+使用 [catalog.ts](../sapi/src/messages/catalog.ts) 中现有键和占位符。玩家语言偏好会持久化。`enter_text` / `leave_text` 支持 `{land}`、`{area}` 与 `{owner}`；领地和子区域各自读取自己的模板，为空时使用全局文案（`entered` / `left` / `entered_area` / `left_area`）。
 
 如需零价格玩法，除圈地、维护、传送价格外，还应调整各级升级成本和奖励。manifest 仍硬依赖 economy 与 activity-log，删除始终检查银行。

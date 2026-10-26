@@ -14,6 +14,13 @@
   "ban_eject": false,
   "border_radius_chunks": 2,
   "border_interval_ticks": 40,
+  "border_particle": "minecraft:endrod",
+  "border_other_particle": "minecraft:basic_flame_particle",
+  "border_step_blocks": 2,
+  "border_heights": [0.2, 1.6],
+  "border_post_height": 3,
+  "border_post_step": 0.5,
+  "border_max_particles": 800,
   "scan_interval_ticks": 20,
   "scheduler_interval_ticks": 6000,
   "quotas": {

@@ -265,7 +265,10 @@ async function createHarness(options = {}) {
   const runtime = {
     Permission: { check: (player) => Boolean(player.admin) },
     debug: { i() {}, w() {} },
-    Msg: { info() {} },
+    // 直接发送的自定义文案（如 enter_text / leave_text）记为 ["#语气", 文本]，与 say 的记录区分
+    Msg: Object.fromEntries(
+      ["info", "tips", "success", "warning", "error"].map((tone) => [tone, (text) => messages.push([`#${tone}`, text])]),
+    ),
   };
   const mocks = {
     "@minecraft/server": minecraft,
@@ -289,7 +292,6 @@ async function createHarness(options = {}) {
     console,
     Date,
     Math,
-    structuredClone,
     Map,
     Set,
     Error,

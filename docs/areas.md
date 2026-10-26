@@ -47,6 +47,6 @@ chunkZ = floor(blockZ / 16)
 
 两个选点使用玩家位置，不是准星方块。换维度后重新设置两个点：当前缓冲区只有一个维度字段，没有分别保存每个点的原维度。选区只在内存中，不应依赖重载后保留。领域层检查非零体积与占领范围，没有额外的维度高度或体积上限策略。
 
-`area_info` 可以查看边界和维度。`border` 目前在玩家高度渲染附近已占领区块角点，不绘制Area线框。没有公开Area边界或直接创建普通Area的服务，`land.here` 只返回有效区域ID/名称。
+`area_info` 可以查看边界和维度。`border` 目前以玩家高度为基准渲染附近领地的区块外轮廓，不绘制Area线框。没有公开Area边界或直接创建普通Area的服务，`land.here` 只返回有效区域ID/名称。
 
 依据：[几何规则](../sapi/src/domain/geometry.ts)、[领地服务](../sapi/src/services/territory.ts)、[空间索引](../sapi/src/cache/world-index.ts)。

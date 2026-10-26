@@ -50,6 +50,20 @@ export interface LandConfig {
   banEject: boolean;
   borderRadiusChunks: number;
   borderIntervalTicks: number;
+  /** border 命令绘制目标领地轮廓的粒子 ID。 */
+  borderParticle: string;
+  /** 绘制附近其他领地轮廓的粒子 ID；空字符串表示不显示其他领地。 */
+  borderOtherParticle: string;
+  /** 轮廓线上相邻粒子的间距（方块）。 */
+  borderStepBlocks: number;
+  /** 轮廓线相对玩家脚底的高度层；多个值即画成多层"矮墙"。 */
+  borderHeights: number[];
+  /** 拐角粒子柱相对玩家脚底的高度（方块）；0 表示不画拐角柱。 */
+  borderPostHeight: number;
+  /** 拐角粒子柱上相邻粒子的竖直间距（方块）。 */
+  borderPostStep: number;
+  /** 每名玩家每轮最多生成的边界粒子数，超出后先保留目标领地。 */
+  borderMaxParticles: number;
   scanIntervalTicks: number;
   schedulerIntervalTicks: number;
   quotas: {
@@ -82,6 +96,13 @@ export const DEFAULT_LAND_CONFIG: LandConfig = {
   banEject: false,
   borderRadiusChunks: 2,
   borderIntervalTicks: 40,
+  borderParticle: "minecraft:endrod",
+  borderOtherParticle: "minecraft:basic_flame_particle",
+  borderStepBlocks: 2,
+  borderHeights: [0.2, 1.6],
+  borderPostHeight: 3,
+  borderPostStep: 0.5,
+  borderMaxParticles: 800,
   scanIntervalTicks: 20,
   schedulerIntervalTicks: 6000,
   quotas: { lands: 3, chunks: 16, members: 10, areas: 8, roles: 8 },
@@ -138,6 +159,18 @@ function bool(value: unknown, fallback: boolean): boolean {
   return typeof value === "boolean" ? value : fallback;
 }
 
+/** 字符串配置项；非字符串回退默认值，允许空字符串（用于关闭可选功能）。当前用于 border 粒子 ID。 */
+function str(value: unknown, fallback: string): string {
+  return typeof value === "string" ? value.trim() : fallback;
+}
+
+/** 数字数组配置项；过滤非有限数字，结果为空时回退默认值。当前用于 border_heights。 */
+function nums(value: unknown, fallback: number[]): number[] {
+  if (!Array.isArray(value)) return [...fallback];
+  const list = value.filter((item): item is number => typeof item === "number" && Number.isFinite(item));
+  return list.length > 0 ? list : [...fallback];
+}
+
 function levelRule(raw: unknown, fallback: LevelRule): LevelRule {
   if (!raw || typeof raw !== "object") return fallback;
   const row = raw as Record<string, unknown>;
@@ -168,8 +201,11 @@ function levelRule(raw: unknown, fallback: LevelRule): LevelRule {
  */
 export function mergeLandConfig(raw?: unknown): LandConfig {
   const base = DEFAULT_LAND_CONFIG;
-  if (!raw || typeof raw !== "object") return structuredClone(base);
-  const src = raw as Record<string, unknown>;
+  // BDS 脚本引擎（QuickJS）没有 structuredClone；缺省配置按空对象合并，同样得到与默认值无共享引用的新对象
+  const src = (raw && typeof raw === "object" ? raw : {}) as Record<
+    string,
+    unknown
+  >;
   const quotasRaw = (src.quotas ?? {}) as Record<string, unknown>;
   const levelsRaw = Array.isArray(src.levels) ? src.levels : null;
   const groupsRaw =
@@ -219,6 +255,29 @@ export function mergeLandConfig(raw?: unknown): LandConfig {
     borderIntervalTicks: Math.max(
       10,
       Math.round(num(src.border_interval_ticks, base.borderIntervalTicks)),
+    ),
+    borderParticle:
+      str(src.border_particle, base.borderParticle) || base.borderParticle,
+    borderOtherParticle: str(
+      src.border_other_particle,
+      base.borderOtherParticle,
+    ),
+    borderStepBlocks: Math.max(
+      0.5,
+      num(src.border_step_blocks, base.borderStepBlocks),
+    ),
+    borderHeights: nums(src.border_heights, base.borderHeights),
+    borderPostHeight: Math.max(
+      0,
+      num(src.border_post_height, base.borderPostHeight),
+    ),
+    borderPostStep: Math.max(
+      0.25,
+      num(src.border_post_step, base.borderPostStep),
+    ),
+    borderMaxParticles: Math.max(
+      1,
+      Math.round(num(src.border_max_particles, base.borderMaxParticles)),
     ),
     scanIntervalTicks: Math.max(
       5,

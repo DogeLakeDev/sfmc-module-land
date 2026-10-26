@@ -38,7 +38,7 @@
 | `spawn_show [land]` | `land.use` | 显示保存的出生点。 |
 | `spawn_reset [land]` | `land.manage` | 选首个占领区块中心，沿用玩家高度和视角。 |
 | `tp [land]` | `land.teleport / public_teleport` | 按权限、公开传送 Flag、冷却和费用传送。 |
-| `border [land]` | `land.use` | 周期显示附近领地区块角点粒子。 |
+| `border [land]` | `land.use` | 周期显示附近领地外轮廓：粒子线、多层矮墙与拐角柱，其他领地用另一种粒子。 |
 | `border_stop` | `land.use` | 停止自己的边界显示。 |
 
 ## 三维区域与 Flags
@@ -125,7 +125,7 @@
 
 末尾字面量 `confirm` 是明确操作意图，不是预览令牌或两阶段事务ID。当前 `admin_repair` 无参数时路由也会补入确认；实际使用请坚持显式确认形式。公开写服务不经过命令确认层。
 
-`flag` / `area_flag` 只有写入，没有 Flag 列表、读取或恢复继承命令；没有单独清除 Area 角色覆盖的命令。`perms` 只是摘要。`border` 显示附近区块角点，不是完整三维区域线框。`map` 中 `.` 是荒野，`#` 是脚下领地，`+` 是其他占领；`#` 不表示所有自己拥有的领地。
+`flag` / `area_flag` 只有写入，没有 Flag 列表、读取或恢复继承命令；没有单独清除 Area 角色覆盖的命令。`perms` 只是摘要。`border` 显示附近领地的区块外轮廓，不显示三维区域线框。`map` 每格都是 `■`，只用颜色区分：黄色是玩家所在的中心格，绿色是脚下领地的其他区块，红色是其他占领，灰色是荒野；绿色不表示所有自己拥有的领地。格子符号可通过配置 `messages` 的 `map_cell_self`、`map_cell_here`、`map_cell_other`、`map_cell_wild` 覆盖；覆盖 `map_title` 时须保留 `{rows}`，它会被替换为地图行。
 
 给角色添加 `land.transfer` 不会取代转让和删除的领主检查。部分服务器管理员业务操作不依赖世界保护的会话绕过开关；详见[权限](permissions.md)与[已知限制](compatibility.md)。
 

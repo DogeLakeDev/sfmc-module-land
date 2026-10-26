@@ -23,6 +23,13 @@ Source configuration: [configs-default/land.json](../configs-default/land.json).
 | `ban_eject` | `false` | On scans, return banned players to a recorded wilderness position; reactive. |
 | `border_radius_chunks` | `2` | Particle scan radius in chunks. |
 | `border_interval_ticks` | `40` | Border particle interval; minimum 10 ticks. |
+| `border_particle` | `"minecraft:endrod"` | Particle ID for the target land outline; an empty string falls back to the default. |
+| `border_other_particle` | `"minecraft:basic_flame_particle"` | Particle ID for nearby other lands; an empty string hides other lands. |
+| `border_step_blocks` | `2` | Spacing between particles along an outline, in blocks; minimum 0.5. |
+| `border_heights` | `[0.2, 1.6]` | Outline heights relative to the player's feet; several values draw a low wall. |
+| `border_post_height` | `3` | Corner post height in blocks; 0 disables corner posts. |
+| `border_post_step` | `0.5` | Vertical spacing on corner posts; minimum 0.25. |
+| `border_max_particles` | `800` | Maximum border particles per player per round; the target land is kept first. |
 | `scan_interval_ticks` | `20` | Presence scan interval; minimum 5 ticks. |
 | `scheduler_interval_ticks` | `6000` | Upkeep/tax/expiry/recovery schedule interval; minimum 200 ticks. |
 | `quotas.lands` | `3` | Base ownership cap per player. |
@@ -86,6 +93,6 @@ Tax defaults off. `tax_set` enables a positive amount and charges each admin/mem
 }
 ```
 
-Use existing keys and placeholders from [catalog.ts](../sapi/src/messages/catalog.ts). Player language preferences are persisted. `enter_text` supports `{land}` and `{owner}`; the registered `leave_text` flag is currently not consumed by the presence loop.
+Use existing keys and placeholders from [catalog.ts](../sapi/src/messages/catalog.ts). Player language preferences are persisted. `enter_text` / `leave_text` support `{land}`, `{area}` and `{owner}`; lands and sub-areas each read their own template and fall back to the global messages (`entered` / `left` / `entered_area` / `left_area`) when empty.
 
 For a zero-price setup, set claim/upkeep/teleport prices to zero and review upgrade costs/rewards too. The manifest still requires economy and activity-log, and deletion always checks the bank.

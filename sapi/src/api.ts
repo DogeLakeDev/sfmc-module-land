@@ -11,6 +11,7 @@ import { asLandError, LandError } from "./domain/errors.js";
 import type { Actor } from "./domain/model.js";
 import { claimChunks, createLand, deleteLand } from "./services/territory.js";
 import { setFlag } from "./services/flags.js";
+import { landMapView } from "./services/map-view.js";
 import { assignRole, createRole, deleteRole, invite, setRolePermission } from "./services/people.js";
 import { decide } from "./services/permission.js";
 import {
@@ -33,6 +34,7 @@ export function provideLandApi(): Array<() => void> {
     ["land.here", handleHere],
     ["land.get", handleGet],
     ["land.list", handleList],
+    ["land.map", handleMap],
     ["land.permission", handlePermission],
     ["land.create", handleCreate],
     ["land.delete", handleDelete],
@@ -64,12 +66,19 @@ export function releaseLandApi(): void {
   for (const off of cleanups.splice(0, cleanups.length)) off();
 }
 
+/**
+ * 映射为 HTTP 403 的错误键。
+ * 使用场景：guard 把领域错误转成服务错误状态码；rent_owner 是「领主租自己的区域」的专用文案，
+ * 语义上仍属权限拒绝，保持与原先 no_permission 相同的 403。
+ */
+const FORBIDDEN_KEYS = new Set(["no_permission", "rent_owner"]);
+
 async function guard(handler: (input: unknown) => Promise<unknown>, input: unknown): Promise<unknown> {
   try {
     return await handler(input);
   } catch (error) {
     const wrapped = asLandError(error);
-    const status = wrapped.key === "no_permission" ? 403 : wrapped.key.endsWith("not_found") ? 404 : wrapped.key === "internal" ? 500 : 409;
+    const status = FORBIDDEN_KEYS.has(wrapped.key) ? 403 : wrapped.key.endsWith("not_found") ? 404 : wrapped.key === "internal" ? 500 : 409;
     throw new ServiceError(renderMessage("zh", wrapped.key, wrapped.vars, {}), wrapped.key, status);
   }
 }
@@ -136,6 +145,14 @@ async function handleList(input: unknown): Promise<unknown> {
   const ownerId = text(input, "ownerId");
   const rows = [...landWorld().lands.values()].filter((land) => !ownerId || land.ownerId === ownerId);
   return { lands: rows.map((land) => ({ id: land.id, name: land.name, ownerId: land.ownerId, status: land.status, chunks: land.claimKeys.length })) };
+}
+
+/**
+ * land.map：全部领地的地图视图（区块与子区域水平范围）。可选 dimensionId 只取一个维度。
+ * 使用场景：网页地图定时拉取后绘制领地图层。只读，不要求操作者。
+ */
+async function handleMap(input: unknown): Promise<unknown> {
+  return landMapView(landWorld(), text(input, "dimensionId"));
 }
 
 async function handlePermission(input: unknown): Promise<unknown> {

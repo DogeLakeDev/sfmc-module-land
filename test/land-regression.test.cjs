@@ -503,3 +503,28 @@ test("external upgrade rewards receive a stable idempotency key across recovery"
     "applied",
   );
 });
+
+test("lease and listing failures report the real reason instead of land_not_found", async (t) => {
+  const rig = await fixture(t);
+  const { parent, area } = await shop(rig);
+  const market = rig.load("services/market.ts");
+  const fails = (promise, key, check = () => true) =>
+    assert.rejects(promise, (error) => error.key === key && check(error.vars));
+
+  await fails(market.takeLease(buyer, parent.id, area.id), "rent_not_found", (vars) => vars.name === area.name);
+  await fails(market.cancelListing(owner, parent.id, area.id), "listing_not_found");
+  await market.publishRent(owner, parent.id, area.id, 20, 3_600_000 * 5);
+  // 领主自租在检查挂牌之前就拒绝
+  await fails(market.takeLease(owner, parent.id, area.id), "rent_owner");
+  await market.takeLease(buyer, parent.id, area.id);
+  await fails(
+    market.takeLease(buyer, parent.id, area.id),
+    "rent_taken",
+    (vars) => vars.name === area.name && vars.tenant === buyer.name && vars.hours === 5,
+  );
+  await market.endLease(buyer, parent.id, area.id);
+  await fails(market.endLease(buyer, parent.id, area.id), "lease_not_found");
+  await fails(market.renewLease(buyer, parent.id, area.id), "lease_not_found");
+  await fails(market.takeLease(buyer, parent.id, area.id), "rent_not_found");
+  await fails(market.buy(buyer, parent.id, area.id), "listing_not_found");
+});

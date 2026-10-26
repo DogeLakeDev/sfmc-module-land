@@ -72,6 +72,8 @@ export function registerProtection(cleanups: Array<() => void>): void {
   cleanups.push(() => world.beforeEvents.playerInteractWithBlock.unsubscribe(interactEvent));
 
   const entityEvent = world.beforeEvents.playerInteractWithEntity.subscribe((event) => {
+    // 目标实体已被移除时读 location/dimension 会抛 InvalidEntityError，此时也无可交互对象
+    if (!event.target.isValid) return;
     const location = event.target.location;
     if (!allowAction(event.player, "entity.interact", location.x, location.y, location.z, event.target.dimension.id)) {
       event.cancel = true;
@@ -86,6 +88,7 @@ export function registerProtection(cleanups: Array<() => void>): void {
       return;
     }
     const hurt = event.hurtEntity;
+    if (!hurt.isValid) return;
     const located = index.locate(hurt.dimension.id, hurt.location.x, hurt.location.y, hurt.location.z);
     if (!located) return;
     const source = event.damageSource.damagingEntity;
@@ -121,7 +124,8 @@ export function registerProtection(cleanups: Array<() => void>): void {
   const spawnEvent = world.afterEvents.entitySpawn.subscribe((event) => {
     const index = worldOrUndefined();
     const entity = event.entity;
-    if (!index?.ready || !entity || entity.typeId === "minecraft:player" || !isHostile(entity.typeId)) return;
+    // afterEvents 在 tick 末尾派发，实体可能已被消失/其他附加包移除，读 dimension 会抛 InvalidEntityError
+    if (!index?.ready || !entity?.isValid || entity.typeId === "minecraft:player" || !isHostile(entity.typeId)) return;
     const located = index.locate(entity.dimension.id, entity.location.x, entity.location.y, entity.location.z);
     if (!located) return;
     if (resolveFlag(index, located.land, located.area, "mob_spawn") === true) return;

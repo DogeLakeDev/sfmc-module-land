@@ -367,3 +367,84 @@ test("actual presence scan orders adjacent transitions even while a subscriber w
   border();
   assert.equal(particles, 0);
 });
+
+test("presence scan shows sub-area enter/leave notices and honours per-scope flags", async (t) => {
+  const rig = await fixture(t);
+  const { repo, index } = rig;
+  const otherLand = { ...rig.land, id: "b", name: "B", nameKey: "b", claimKeys: [], defaultAreaId: "default-b" };
+  const otherDefault = { ...rig.area, id: "default-b", landId: "b", kind: "default", box: null };
+  const garden = {
+    ...rig.area,
+    id: "garden",
+    name: "Garden",
+    nameKey: "garden",
+    box: { min: { x: 10, y: 0, z: 0 }, max: { x: 15, y: 100, z: 8 } },
+  };
+  await repo.insertLand(otherLand);
+  index.upsertLand(otherLand);
+  for (const item of [otherDefault, garden]) {
+    await repo.insertArea(item);
+    index.upsertArea(item);
+  }
+  for (const [landId, chunkX] of [
+    ["a", 0],
+    ["b", 1],
+  ]) {
+    const claim = {
+      id: `claim-${landId}`,
+      key: `minecraft:overworld|${chunkX}|0`,
+      dimensionId: "minecraft:overworld",
+      chunkX,
+      chunkZ: 0,
+      landId,
+      createdAt: 1,
+    };
+    await repo.insertClaim(claim);
+    index.upsertClaim(claim.key, claim.id, claim.landId);
+  }
+  const player = { id: "guest", dimension: { id: "minecraft:overworld" }, location: { x: 12, y: 64, z: 12 } };
+  rig.players.push(player);
+  const loops = rig.load("runtime/loops.ts");
+  t.after(loops.startLoops());
+  const scan = rig.callbacks.get(0);
+  const seen = () =>
+    rig.messages
+      .splice(0)
+      .map((item) => (String(item[0]).startsWith("#") ? item : [item[0], item[1].land, item[1].area, item[2]]));
+  const moveTo = async (x, z) => {
+    player.location.x = x;
+    player.location.z = z;
+    scan();
+    await flush();
+    return seen();
+  };
+
+  assert.deepEqual(await moveTo(12, 12), [["entered", "A", "", "info"]]);
+  assert.deepEqual(await moveTo(2, 2), [["entered_area", "A", "Room", "tips"]]);
+  assert.deepEqual(await moveTo(12, 2), [
+    ["left_area", "A", "Room", "tips"],
+    ["entered_area", "A", "Garden", "tips"],
+  ]);
+  assert.deepEqual(await moveTo(12, 12), [["left_area", "A", "Garden", "tips"]]);
+  await moveTo(2, 2);
+  assert.deepEqual(await moveTo(20, 2), [
+    ["left_area", "A", "Room", "tips"],
+    ["left", "A", "Room", "tips"],
+    ["entered", "B", "", "info"],
+  ]);
+
+  // 子区域自定义文案只作用于子区域提示；领地 leave_text 生效；子区域关闭离开提示只影响它自己
+  index.setFlag("f1", "garden", "enter_text", "欢迎来到 {area}@{land}（{owner}）");
+  index.setFlag("f2", "b", "leave_text", "再见 {land}");
+  index.setFlag("f3", "room", "leave_message", false);
+  assert.deepEqual(await moveTo(12, 2), [
+    ["#tips", "再见 B"],
+    ["entered", "A", "Garden", "info"],
+    ["#tips", "欢迎来到 Garden@A（Owner）"],
+  ]);
+  assert.deepEqual(await moveTo(2, 2), [
+    ["left_area", "A", "Garden", "tips"],
+    ["entered_area", "A", "Room", "tips"],
+  ]);
+  assert.deepEqual(await moveTo(12, 12), []);
+});

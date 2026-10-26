@@ -2,7 +2,7 @@
 
 [中文](api.md) · [Documentation](README.md)
 
-The SDK service bus exposes these **22 services**. Manifest schemas currently declare object inputs/outputs only; this page documents the implemented contract. Do not bypass validation by importing internal service files.
+The SDK service bus exposes these **23 services**. Manifest schemas currently declare object inputs/outputs only; this page documents the implemented contract. Do not bypass validation by importing internal service files.
 
 ## Integration and identity boundary
 
@@ -80,9 +80,25 @@ These are consumer-side example types, not a separately exported API type packag
 | land.here | `{dimensionId,x,y,z}` | `{found:false}` or the located result below |
 | land.get | `{name? , landId?}` | `LandView` |
 | land.list | `{ownerId?}` | `{lands:LandSummary[]}` |
+| land.map | `{dimensionId?}` | `{lands:MapLand[]}` |
 | land.permission | `{playerId,dimensionId,x,y,z,permission}` | `Decision` |
 
 A located result is `{found:true,landId,landName,ownerId,areaId,areaName,specific,status}`. specific distinguishes a box area from the default area. areaId here is the actual default-area ID. name takes precedence over landId in land.get. land.list is not paginated.
+
+land.map is meant for web maps and other displays. It returns every land's claimed chunks and the horizontal extent of its box areas, sorted by land ID and not paginated. With dimensionId it keeps only that dimension and skips lands that have no chunks or areas there. Members, roles, flags and bank data are not included. Area coordinates are **inclusive** block coordinates (the internal half-open max minus 1):
+
+```ts
+type MapLand = {
+  id: string; name: string; ownerId: string; ownerName: string;
+  status: "active" | "delinquent" | "frozen"; level: number;
+  claims: { dimensionId: string; chunks: [chunkX: number, chunkZ: number][] }[];
+  areas: {
+    id: string; name: string; dimensionId: string;
+    minX: number; minY: number; minZ: number;
+    maxX: number; maxY: number; maxZ: number;
+  }[];
+};
+```
 
 Decision.allow is final and agrees with effect. resolution:inherit means an area fell back to a land role, not an independently allowed third result. Reasons are `not_ready, bypass, wilderness, wilderness_protected, owner, banned, frozen, delinquent, role_grant, role_deny`.
 

@@ -82,10 +82,10 @@ Alice 用 `/c:land accept Home` 接受邀请。Store 之外成员角色允许建
 | `mob_spawn` | `boolean` | `both` | `true` | 关闭后移除已登记敌对生物；生成后处理。 |
 | `pvp` | `boolean` | `both` | `false` | 识别到攻击来源和受害者都是玩家时拒绝伤害；开启后仍需 entity.attack。 |
 | `public_teleport` | `boolean` | `land` | `false` | 允许公开传送，仍有冷却、费用和封禁限制。 |
-| `enter_message` | `boolean` | `both` | `true` | 控制进入领地消息；不关闭全部 Area 提示。 |
-| `leave_message` | `boolean` | `both` | `true` | 控制离开领地消息。 |
-| `enter_text` | `string` | `both` | `空 / empty` | 进入领地模板，支持 {land}、{owner}。 |
-| `leave_text` | `string` | `both` | `空 / empty` | 已注册并可保存，但当前循环未读取。 |
+| `enter_message` | `boolean` | `both` | `true` | 控制进入提示；设在子区域上时只影响该子区域（子区域值优先，其次领地值）。 |
+| `leave_message` | `boolean` | `both` | `true` | 控制离开提示；解析规则同 `enter_message`。 |
+| `enter_text` | `string` | `both` | `空 / empty` | 进入提示模板，支持 {land}、{area}、{owner}；领地与子区域各用自己的值，不继承。 |
+| `leave_text` | `string` | `both` | `空 / empty` | 离开提示模板，占位符与继承规则同 `enter_text`。 |
 
 both 表示领地或普通区域；land-only Flag 不允许写入Area。有效值按普通区域、领地、注册默认值顺序读取。布尔写入接受 true/false/on/off，数字要求有限值；未知Flag写入拒绝，缺值回退，不自动允许。
 

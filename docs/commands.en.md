@@ -38,7 +38,7 @@ Canonical examples include an explicit land. Optional-land commands resolve the 
 | `spawn_show [land]` | `land.use` | Show the stored spawn. |
 | `spawn_reset [land]` | `land.manage` | Use the first claimed chunk’s center with the caller’s Y/rotation. |
 | `tp [land]` | `land.teleport / public_teleport` | Teleport subject to permission/public flag, cooldown, and price. |
-| `border [land]` | `land.use` | Periodically show nearby claimed chunk corner particles. |
+| `border [land]` | `land.use` | Periodically show nearby land outlines as particle lines, layered walls and corner posts; other lands use another particle. |
 | `border_stop` | `land.use` | Stop the caller’s border display. |
 
 ## 3D areas and flags
@@ -125,7 +125,7 @@ Canonical examples include an explicit land. Optional-land commands resolve the 
 
 The final literal `confirm` is a deliberate command acknowledgement, not a preview token or two-step transaction ID. `admin_repair` currently also runs without arguments because the router inserts confirmation; use the explicit documented form. Public write services do not have this command confirmation layer.
 
-`flag`/`area_flag` only write values; there is no flag-list/reset command. There is no command to remove an area-role override alone. `perms` is a summary, and `border` shows nearby chunk corner particles rather than a 3D area wireframe. `map` marks wilderness with `.`, the land currently under the player with `#`, and other claims with `+`.
+`flag`/`area_flag` only write values; there is no flag-list/reset command. There is no command to remove an area-role override alone. `perms` is a summary, and `border` shows nearby land chunk outlines, not 3D area wireframes. `map` draws every cell as `■` and distinguishes them only by color: yellow is the player's center cell, green is other chunks of the land under the player, red is other claims, and gray is wilderness. Override the cells through the `messages` keys `map_cell_self`, `map_cell_here`, `map_cell_other` and `map_cell_wild`; an override of `map_title` must keep `{rows}`, which is replaced by the map rows.
 
 Ownership checks for deletion/transfer remain stricter than granting `land.transfer` to a role. Some server-admin business actions do not require the session world-protection bypass. See [permissions](permissions.en.md) and [known limitations](compatibility.en.md).
 

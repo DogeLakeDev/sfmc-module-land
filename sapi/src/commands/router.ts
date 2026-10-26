@@ -10,7 +10,7 @@ import { claimKey, chunkOf } from "../domain/geometry.js";
 import { chunkPrice, landConfig, rememberPlayer, requireLand, resolvePlayer, world as landWorld } from "../services/shared.js";
 import { LandError } from "../domain/errors.js";
 import type { Actor } from "../domain/model.js";
-import { say, sayError } from "../messages/speak.js";
+import { phrase, say, sayError } from "../messages/speak.js";
 import { openTransactions, diagnose, repair, setAdminBypass } from "../services/admin.js";
 import { bankBalance, deposit, payUpkeep, setTax, upgradeLand, upkeepAmount, withdraw } from "../services/finance.js";
 import { nextLevelRule } from "../config.js";
@@ -261,19 +261,28 @@ async function dispatch(player: Player | undefined, actor: Actor, action: string
     case "map":
     case "near": {
       if (!player) throw new LandError("need_player");
-      say(player, "map_title", {}, "info");
       const origin = chunkOf(player.dimension.id, player.location.x, player.location.z);
+      const standingLandId = currentOptional(player);
+      // 四种格子符号来自文案表（同一字形不同颜色），中心格固定标记玩家位置
+      const cell = {
+        self: phrase(player, "map_cell_self"),
+        here: phrase(player, "map_cell_here"),
+        other: phrase(player, "map_cell_other"),
+        wild: phrase(player, "map_cell_wild"),
+      };
       const lines: string[] = [];
       for (let dz = -3; dz <= 3; dz += 1) {
-        let line = "";
+        const row: string[] = [];
         for (let dx = -3; dx <= 3; dx += 1) {
           const key = claimKey(origin.dimensionId, origin.chunkX + dx, origin.chunkZ + dz);
           const landId = landWorld().claims.get(key);
-          line += !landId ? "." : landId === currentOptional(player) ? "#" : "+";
+          if (dx === 0 && dz === 0) row.push(cell.self);
+          else row.push(!landId ? cell.wild : landId === standingLandId ? cell.here : cell.other);
         }
-        lines.push(line);
+        lines.push(phrase(player, "map_line", { line: row.join(" ") }));
       }
-      for (const line of lines) say(player, "map_line", { line }, "tips");
+      // 标题与地图行合并为一条多行消息：只有首行带 [*] 前缀，地图行左侧对齐
+      say(player, "map_title", { rows: `\n${lines.join("\n")}` }, "info");
       return;
     }
     case "meta":
