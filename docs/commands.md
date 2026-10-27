@@ -54,7 +54,7 @@
 | `area_describe <land> <area> [text...]` | `area.manage` | 设置区域介绍。 |
 | `area_info <land> <area>` | `land.use` | 显示类型、维度和半开边界。 |
 | `area_list [land]` | `land.use` | 列出默认区域和普通区域。 |
-| `area_member <land> <area> <player> <role>` | `member.manage` | 设置普通区域的角色覆盖，可为非领地成员授权。 |
+| `area_member <land> <area> <player> <role>` | `member.manage` | 设置普通区域的角色覆盖，可为非领地成员授权；player 写 `@public`、`@all` 或 `所有人` 时设置该区域对未加入领地玩家的公共角色（只对世界交互生效）。 |
 | `flag <land> <flag> <value>` | `flag.manage` | 设置领地 Flag；不是查询命令。 |
 | `area_flag <land> <area> <flag> <value>` | `flag.manage` | 设置普通区域 Flag。 |
 
@@ -120,6 +120,8 @@
 | `admin_diag [land]` | `land.admin` | 只读诊断默认区域、越界/重叠、缺失角色与孤立占领。 |
 | `admin_repair [land] confirm` | `land.admin` | 有限修复并续跑交易；不是任意数据修复器。 |
 | `admin_tx [land]` | `land.admin` | 列出最多20条非 applied 交易。 |
+| `admin_legacy [filter]` | `land.admin` | 列出尚未绑定的旧服占位身份（`xuid:<XUID>`，最多20条）及其名下领地数，可按名字或 XUID 过滤。 |
+| `admin_legacy_bind <旧XUID或占位名> <player> confirm` | `land.admin` | 把占位身份名下的领主身份、成员关系与区域授权转给真实玩家；真实玩家已有的关系保留，冲突的占位关系丢弃。 |
 
 ## 确认与可见限制
 

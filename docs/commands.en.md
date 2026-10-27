@@ -54,7 +54,7 @@ Canonical examples include an explicit land. Optional-land commands resolve the 
 | `area_describe <land> <area> [text...]` | `area.manage` | Set an area description. |
 | `area_info <land> <area>` | `land.use` | Show kind, dimension, and half-open bounds. |
 | `area_list [land]` | `land.use` | List default and box areas. |
-| `area_member <land> <area> <player> <role>` | `member.manage` | Assign an area role override, including to a non-member. |
+| `area_member <land> <area> <player> <role>` | `member.manage` | Assign an area role override, including to a non-member. Use `@public`, `@all`, or `所有人` as player to set the area's public role for players outside the land (world interaction only). |
 | `flag <land> <flag> <value>` | `flag.manage` | Set a land flag; this is not a query command. |
 | `area_flag <land> <area> <flag> <value>` | `flag.manage` | Set a box area flag. |
 
@@ -120,6 +120,8 @@ Canonical examples include an explicit land. Optional-land commands resolve the 
 | `admin_diag [land]` | `land.admin` | Diagnose default areas, containment/overlap, missing roles, and orphan claims. |
 | `admin_repair [land] confirm` | `land.admin` | Perform limited repairs and transaction recovery, not arbitrary data repair. |
 | `admin_tx [land]` | `land.admin` | List up to 20 non-applied transactions. |
+| `admin_legacy [filter]` | `land.admin` | List up to 20 unbound legacy placeholder identities (`xuid:<XUID>`) with their land counts; filter by name or XUID. |
+| `admin_legacy_bind <legacy XUID or name> <player> confirm` | `land.admin` | Move a placeholder's ownership, memberships, and area grants to the real player; the player's existing relations win and conflicting placeholder relations are dropped. |
 
 ## Confirmation and observable limits
 

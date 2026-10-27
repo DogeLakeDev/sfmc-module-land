@@ -4,7 +4,7 @@
  */
 
 import type { WorldIndex } from "../cache/world-index.js";
-import { getFlag } from "../domain/permissions.js";
+import { getFlag, PUBLIC_PLAYER_ID, PUBLIC_PRESET } from "../domain/permissions.js";
 import type { Actor, AreaState, FlagValue, LandState, Located, MemberState, RoleState } from "../domain/model.js";
 
 /** 可解释的权限结果。reason 是稳定代码，不是给玩家的最终句子。 */
@@ -100,7 +100,10 @@ export function decide(
     return decision({ ...base, allow: false, reason: "delinquent", relation: member?.relation ?? "none" });
   }
   const resolved = resolveRole(index, located, actor.id, member);
-  const allow = resolved.role?.permissions.includes(permission) ?? false;
+  // 公共角色只代表“所有人”的世界交互权限，不能借它获得成员管理、银行等领地管理能力
+  const publicSource = resolved.source === "area_public" || resolved.source === "land_public";
+  const usable = !publicSource || isWorldAction(permission);
+  const allow = usable && (resolved.role?.permissions.includes(permission) ?? false);
   return decision({
     ...base,
     allow,
@@ -108,7 +111,7 @@ export function decide(
     relation: member?.relation ?? "none",
     roleId: resolved.role?.id ?? "",
     roleName: resolved.role?.name ?? "",
-    resolution: located.specific && resolved.source === "land" ? "inherit" : "explicit",
+    resolution: located.specific && (resolved.source === "land" || resolved.source === "land_public") ? "inherit" : "explicit",
   });
 }
 
@@ -122,22 +125,42 @@ function isWorldAction(permission: string): boolean {
   );
 }
 
-/** 区域角色只在命中的普通区域生效；否则回退领地成员角色。 */
+/**
+ * 区域角色只在命中的普通区域生效；否则回退领地成员角色。
+ * 非成员（含待接受邀请）再依次回退：命中区域的“所有人”覆盖（@public）→ 领地的公共角色（preset=public）。
+ * 封禁玩家不回退公共角色。
+ */
 export function resolveRole(
   index: WorldIndex,
   located: Located,
   playerId: string,
   member: MemberState | undefined,
-): { role: RoleState | undefined; source: "area" | "land" | "none" } {
+): { role: RoleState | undefined; source: "area" | "land" | "area_public" | "land_public" | "none" } {
   if (located.specific) {
     const override = index.areaRoles.get(`${located.area.id}|${playerId}`);
     const areaRole = override ? index.roles.get(override.roleId) : undefined;
     if (areaRole) return { role: areaRole, source: "area" };
   }
-  if (!member || member.relation === "invited" || member.relation === "banned" || !member.roleId) {
-    return { role: undefined, source: "none" };
+  if (member?.relation === "banned") return { role: undefined, source: "none" };
+  if (!member || member.relation === "invited" || !member.roleId) {
+    return publicRole(index, located);
   }
   return { role: index.roles.get(member.roleId), source: "land" };
+}
+
+/**
+ * 非成员的公共角色。
+ * 使用场景：resolveRole 的回退分支；子区域可用 @public 覆盖领地级公共角色（iland 迁移时每块原领地各自的对外权限）。
+ */
+function publicRole(index: WorldIndex, located: Located): { role: RoleState | undefined; source: "area_public" | "land_public" | "none" } {
+  if (located.specific) {
+    const override = index.areaRoles.get(`${located.area.id}|${PUBLIC_PLAYER_ID}`);
+    const areaRole = override ? index.roles.get(override.roleId) : undefined;
+    if (areaRole) return { role: areaRole, source: "area_public" };
+  }
+  const landRole = index.rolesOf(located.land.id).find((role) => role.preset === PUBLIC_PRESET);
+  if (landRole) return { role: landRole, source: "land_public" };
+  return { role: undefined, source: "none" };
 }
 
 /**

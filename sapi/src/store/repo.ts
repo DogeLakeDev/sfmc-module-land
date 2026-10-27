@@ -331,6 +331,20 @@ export async function updateAreaRole(
   await store(tx).update(TABLES.areaRole, role.id, { role_id: role.roleId });
 }
 
+/**
+ * 把区域授权改挂到另一个玩家 ID（同时更新唯一键）。
+ * 使用场景：旧服占位身份绑定到真实 player.id；调用方需先确认目标玩家在该区域没有授权。
+ */
+export async function rebindAreaRole(
+  role: AreaRoleState,
+  tx?: TxContext,
+): Promise<void> {
+  await store(tx).update(TABLES.areaRole, role.id, {
+    player_id: role.playerId,
+    assign_key: `${role.areaId}|${role.playerId}`,
+  });
+}
+
 export async function upsertFlag(
   row: {
     id: string;

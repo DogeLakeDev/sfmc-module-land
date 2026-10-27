@@ -17,11 +17,12 @@
 5. 领主允许，此分支先于封禁和冻结检查。
 6. 封禁者拒绝；冻结领地拒绝非领主已识别的世界操作，非活跃领地拒绝继续占领。
 7. 有当前区域角色则整体替代领地角色；无覆盖时读取该成员的领地角色。
-8. 只有角色包含请求权限才允许；无可用角色则拒绝。
+8. 非成员（含待接受邀请）依次回退：当前区域的“所有人”覆盖（`@public`）→ 领地的公共角色（模板键 `public`）。公共角色只对世界交互权限（`block.*`、`entity.*`、`container.open`、`door.use`、`redstone.interact`）生效，不能借此获得管理类权限。封禁者不回退。
+9. 只有角色包含请求权限才允许；无可用角色则拒绝。
 
 `Decision.allow` 是最终布尔值；`effect` 为 allow/deny。普通区域回退到领地角色时 `resolution` 为 inherit，其余为 explicit。inherit 描述最终结果来源，不能单独当作允许。reason 包括 not_ready、bypass、wilderness、wilderness_protected、owner、banned、frozen、delinquent、role_grant、role_deny。
 
-Flags 由各自的消费者执行；通用玩家解析器不会自动应用所有注册的 role/custom Flag。例如伤害处理器先判断 pvp，再检查 entity.attack；explosion 和 mob_spawn 不依赖玩家主体。
+Flags 由各自的消费者执行；通用玩家解析器不会自动应用所有注册的 role/custom Flag。例如伤害处理器先判断 pvp，再按目标检查 entity.attack_hostile（已登记敌对生物）或 entity.attack（其他实体）；explosion 和 mob_spawn 不依赖玩家主体。
 
 ## 内置操作权限
 
@@ -31,8 +32,9 @@ Flags 由各自的消费者执行；通用玩家解析器不会自动应用所�
 | `block.place` | 放置方块 |
 | `block.interact` | 未独立分类的方块交互 |
 | `container.open` | 打开已分类的容器/工作站 |
-| `door.use` | 使用门、活板门、栅栏门 |
-| `entity.attack` | 玩家对实体造成伤害 |
+| `door.use` | 使用门、活板门、栅栏门（含无材质前缀的橡木款 `minecraft:trapdoor`、`minecraft:fence_gate`） |
+| `entity.attack` | 玩家对非敌对实体造成伤害（动物、村民、盔甲架等） |
+| `entity.attack_hostile` | 玩家对已登记敌对生物造成伤害 |
 | `entity.interact` | 与实体交互 |
 | `redstone.interact` | 交互已分类红石机关 |
 | `land.manage` | 改领地名称、介绍、元数据、出生点 |
@@ -53,13 +55,14 @@ Flags 由各自的消费者执行；通用玩家解析器不会自动应用所�
 | 模板键 | 初始名称 | 保留 | 初始权限 |
 | --- | --- | --- | --- |
 | `admin` | 管理员 | true | 除 land.transfer 外的内置权限。 |
-| `member` | 成员 | false | `block.break`, `block.place`, `block.interact`, `container.open`, `door.use`, `entity.interact`, `redstone.interact`, `land.teleport`, `bank.view`, `bank.deposit` |
-| `visitor` | 访客 | false | `door.use`, `block.interact` |
-| `tenant` | 租客 | true | `block.break`, `block.place`, `block.interact`, `container.open`, `door.use`, `entity.interact`, `redstone.interact` |
+| `member` | 成员 | false | `block.break`, `block.place`, `block.interact`, `container.open`, `door.use`, `entity.attack_hostile`, `entity.interact`, `redstone.interact`, `land.teleport`, `bank.view`, `bank.deposit` |
+| `visitor` | 访客 | false | `door.use`, `block.interact`, `entity.attack_hostile` |
+| `tenant` | 租客 | true | `block.break`, `block.place`, `block.interact`, `container.open`, `door.use`, `entity.attack_hostile`, `entity.interact`, `redstone.interact` |
+| `public` | 公共 | true | `entity.attack_hostile`（未加入领地的玩家默认权限，只对世界交互生效） |
 
 每个领地的模板生成独立角色ID；即使选择英文，初始角色名称仍为中文。邀请、转让、租赁依靠稳定 `preset` 键，改名不会改变授权。保留角色不可删除，但名称、介绍和权限仍可修改。“成员”“访客”模板不是保留角色，删除后可能导致默认邀请或区域购买失败，应保留业务依赖的模板角色。
 
-陌生玩家不会自动套用“访客”模板：没有成员关系和区域覆盖时没有可用角色。`trust` 默认直接授予 trusted 关系与访客模板；`invite` 接受后默认使用成员模板。Area 可以给非领地成员独立授权，但封禁优先。
+陌生玩家不会自动套用“访客”模板，而是使用领地的“公共”角色（新领地默认只允许攻击敌对生物）；在子区域用 `area_member <领地> <区域> @public <角色>` 可以为“所有人”单独指定角色。更新前创建、没有公共角色的领地保持原行为：陌生玩家没有可用角色。`trust` 默认直接授予 trusted 关系与访客模板；`invite` 接受后默认使用成员模板。Area 可以给非领地成员独立授权，但封禁优先。
 
 自定义角色初始权限为空。删除被引用的角色时必须指定同领地替代角色，事务内迁移引用。没有角色层级或“只能授予自己已拥有权限”的约束；member.manage 与 role.manage 是较强的委派权限，应只授给可信管理者。
 

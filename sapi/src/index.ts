@@ -13,7 +13,8 @@ import { WorldIndex } from "./cache/world-index.js";
 import { LAND_ACTIONS, runLandCommand } from "./commands/router.js";
 import { mergeLandConfig, type LandConfig } from "./config.js";
 import type { Actor } from "./domain/model.js";
-import { rememberLocale } from "./messages/speak.js";
+import { rememberLocale, say } from "./messages/speak.js";
+import { bindLegacyOnJoin } from "./services/legacy.js";
 import { registerProtection } from "./protection/guard.js";
 import { startLoops } from "./runtime/loops.js";
 import { loadSubscribers } from "./services/hooks.js";
@@ -69,9 +70,19 @@ ModuleRegistry.register({
       registerProtection(cleanups);
       const spawn = world.afterEvents.playerSpawn.subscribe((event) => {
         if (!event.initialSpawn) return;
-        void rememberPlayer(event.player).catch((error: unknown) => {
+        const player = event.player;
+        const who = { id: player.id, name: player.name };
+        void rememberPlayer(player).catch((error: unknown) => {
           debug.w("Land", `记录玩家身份失败: ${error instanceof Error ? error.message : String(error)}`);
         });
+        // 旧服（iland）迁移的占位身份按名字自动绑定到真实 player.id
+        void bindLegacyOnJoin(who)
+          .then((count) => {
+            if (count > 0 && player.isValid) say(player, "legacy_bound", { count }, "success");
+          })
+          .catch((error: unknown) => {
+            debug.w("Land", `绑定旧服身份失败: ${error instanceof Error ? error.message : String(error)}`);
+          });
       });
       cleanups.push(() => world.afterEvents.playerSpawn.unsubscribe(spawn));
     },

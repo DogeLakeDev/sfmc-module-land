@@ -29,7 +29,9 @@ export const CORE_PERMISSIONS: PermissionDef[] = [
   { id: "block.interact", description: "与未单独分类的方块交互" },
   { id: "container.open", description: "打开容器" },
   { id: "door.use", description: "使用门、活板门和栅栏门" },
-  { id: "entity.attack", description: "攻击实体" },
+  { id: "entity.attack", description: "攻击非敌对实体（动物、村民、盔甲架等）" },
+  /** 攻击已登记的敌对生物。与 entity.attack 分开，便于对外开放打怪而不开放杀动物；使用场景：保护层伤害判定、iland 迁移映射。 */
+  { id: "entity.attack_hostile", description: "攻击敌对生物" },
   { id: "entity.interact", description: "与实体交互" },
   { id: "redstone.interact", description: "使用红石机关" },
   { id: "land.manage", description: "修改领地设置、出生点和基础信息" },
@@ -219,6 +221,18 @@ export function coerceFlag(def: FlagDef, raw: string): FlagValue {
   return raw;
 }
 
+/**
+ * 公共角色的模板键。
+ * 使用场景：领地级“所有人”默认权限（非成员回退到该角色）；新建领地和 iland 迁移都会生成一条该模板的角色。
+ */
+export const PUBLIC_PRESET = "public";
+
+/**
+ * 子区域“所有人”覆盖使用的占位玩家 ID。
+ * 使用场景：land2_area_role 中 player_id 为该值时，表示该区域对非成员生效的角色；命令里可用 @public / 所有人 指代。
+ */
+export const PUBLIC_PLAYER_ID = "@public";
+
 /** 预置角色模板。它们只是新领地的初始数据，权限判断不会按这些名字分支。 */
 export function presetRoles(): Array<{ key: string; name: string; description: string; permissions: string[]; reserved: boolean }> {
   return [
@@ -234,6 +248,7 @@ export function presetRoles(): Array<{ key: string; name: string; description: s
         "container.open",
         "door.use",
         "entity.attack",
+        "entity.attack_hostile",
         "entity.interact",
         "redstone.interact",
         "land.manage",
@@ -260,6 +275,7 @@ export function presetRoles(): Array<{ key: string; name: string; description: s
         "block.interact",
         "container.open",
         "door.use",
+        "entity.attack_hostile",
         "entity.interact",
         "redstone.interact",
         "land.teleport",
@@ -272,7 +288,7 @@ export function presetRoles(): Array<{ key: string; name: string; description: s
       name: "访客",
       description: "默认可使用门，但不能建造或打开容器",
       reserved: false,
-      permissions: ["door.use", "block.interact"],
+      permissions: ["door.use", "block.interact", "entity.attack_hostile"],
     },
     {
       key: "tenant",
@@ -285,9 +301,17 @@ export function presetRoles(): Array<{ key: string; name: string; description: s
         "block.interact",
         "container.open",
         "door.use",
+        "entity.attack_hostile",
         "entity.interact",
         "redstone.interact",
       ],
+    },
+    {
+      key: PUBLIC_PRESET,
+      name: "公共",
+      description: "未加入领地的玩家默认拥有的权限，只对世界交互生效",
+      reserved: true,
+      permissions: ["entity.attack_hostile"],
     },
   ];
 }

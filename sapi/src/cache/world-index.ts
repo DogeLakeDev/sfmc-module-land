@@ -231,6 +231,18 @@ export class WorldIndex {
     this.identities.set(nameKey(playerName), { playerId, playerName });
   }
 
+  /**
+   * 移除一条身份记录（ID 键，以及仍指向它的名字键）。
+   * 使用场景：旧服占位身份绑定到真实玩家后清理索引。
+   */
+  forgetIdentity(playerId: string): void {
+    const item = this.identities.get(playerId);
+    this.identities.delete(playerId);
+    if (item && this.identities.get(nameKey(item.playerName))?.playerId === playerId) {
+      this.identities.delete(nameKey(item.playerName));
+    }
+  }
+
   /** 按名称或已记录的玩家 ID 查找玩家。同名时要求在线精确匹配由调用方处理。 */
   identityByToken(
     token: string,

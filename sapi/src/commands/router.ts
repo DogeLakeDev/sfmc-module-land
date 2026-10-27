@@ -7,6 +7,7 @@ import type { Player } from "@minecraft/server";
 import { world } from "@minecraft/server";
 import { Permission } from "@sfmc-bds/sdk/sapi/runtime";
 import { claimKey, chunkOf } from "../domain/geometry.js";
+import { PUBLIC_PLAYER_ID } from "../domain/permissions.js";
 import { chunkPrice, landConfig, rememberPlayer, requireLand, resolvePlayer, world as landWorld } from "../services/shared.js";
 import { LandError } from "../domain/errors.js";
 import type { Actor } from "../domain/model.js";
@@ -43,6 +44,7 @@ import {
   untrust,
 } from "../services/people.js";
 import { decide, resolveFlag, resolveRole } from "../services/permission.js";
+import { bindLegacy, bindLegacyOnJoin, findLegacy, legacyIdentities } from "../services/legacy.js";
 import { holds } from "../services/shared.js";
 import { setFlag } from "../services/flags.js";
 import {
@@ -149,6 +151,8 @@ export const LAND_ACTIONS = [
   "admin_diag",
   "admin_repair",
   "admin_tx",
+  "admin_legacy",
+  "admin_legacy_bind",
 ] as const;
 
 const selection = new Map<string, { dimensionId?: string; pos1?: { x: number; y: number; z: number }; pos2?: { x: number; y: number; z: number } }>();
@@ -191,6 +195,11 @@ export async function runLandCommand(player: Player | undefined, action: unknown
   const name = typeof action === "string" ? action : "help";
   try {
     if (player) await rememberPlayer(player);
+    // 进服时绑定可能因索引未就绪而跳过，执行领地命令时再补一次
+    if (player) {
+      const bound = await bindLegacyOnJoin({ id: player.id, name: player.name });
+      if (bound > 0) say(player, "legacy_bound", { count: bound }, "success");
+    }
     if (name.startsWith("admin_") && player && !Permission.check(player, "land.admin")) {
       throw new LandError("no_permission", { reason: "land.admin" });
     }
@@ -400,9 +409,41 @@ async function dispatch(player: Player | undefined, actor: Actor, action: string
       for (const line of lines) say(player, "tx", { id: line, status: "", amount: "" }, "info");
       return;
     }
+    case "admin_legacy": {
+      // 列出尚未绑定的旧服身份（最多 20 条），可用名字或 XUID 过滤
+      const filter = args[0]?.toLowerCase() ?? "";
+      const rows = legacyIdentities().filter((item) => !filter || item.playerId.toLowerCase().includes(filter) || item.playerName.toLowerCase().includes(filter));
+      if (rows.length === 0) say(player, "legacy_none", {}, "tips");
+      say(player, "legacy_total", { count: rows.length }, "info");
+      for (const item of rows.slice(0, 20)) {
+        const lands = [...landWorld().lands.values()].filter((land) => land.ownerId === item.playerId).length;
+        say(player, "legacy_line", { name: item.playerName, id: item.playerId, lands }, "info");
+      }
+      return;
+    }
+    case "admin_legacy_bind": {
+      const [legacyToken, playerToken] = confirmed(args, `/c:land admin_legacy_bind ${args[0] ?? ""} ${args[1] ?? ""} confirm`);
+      const legacy = findLegacy(legacyToken ?? "");
+      const target = resolvePlayer(playerToken ?? "", world.getAllPlayers());
+      const count = await bindLegacy(legacy.playerId, target, actor.id);
+      say(player, "legacy_bound_admin", { legacy: `${legacy.playerName}(${legacy.playerId})`, player: target.name, count }, "success");
+      return;
+    }
     default:
       throw new LandError("unknown_command");
   }
+}
+
+/** area_member 中表示“所有非成员”的写法。 */
+const PUBLIC_TOKENS = new Set(["@public", "所有人", "@all"]);
+
+/**
+ * 解析 area_member 的目标：@public / 所有人 指向子区域的公共覆盖，其余按玩家解析。
+ * 使用场景：领主为某个子区域单独设置对外开放的角色（iland 迁移后的每块原领地即依赖该覆盖）。
+ */
+function areaMemberTarget(token: string): { id: string; name: string } {
+  if (PUBLIC_TOKENS.has(token.toLowerCase())) return { id: PUBLIC_PLAYER_ID, name: "所有人" };
+  return resolvePlayer(token, world.getAllPlayers());
 }
 
 function need(args: string[], index: number): string {
@@ -598,7 +639,7 @@ async function areaCommand(player: Player | undefined, actor: Actor, action: str
     return;
   }
   if (action === "area_member") {
-    const target = resolvePlayer(need(args, 2), world.getAllPlayers());
+    const target = areaMemberTarget(need(args, 2));
     await assignAreaRole(actor, need(args, 0), need(args, 1), target.id, need(args, 3));
     say(player, "member_updated", { player: target.name }, "success");
     return;

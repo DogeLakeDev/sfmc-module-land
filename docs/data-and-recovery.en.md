@@ -89,6 +89,10 @@ The module does not read, rewrite or import the legacy 0.2 `sfmc_lands` table. O
 
 For existing `land2_role` data without `preset`, SDK table definition adds the column. Decoding uses a saved preset, then an unchanged template display name, then a unique permission-set match for a reserved role. A reserved role with both name and permissions changed may be unidentifiable; transfer/rental can report `role_not_found`. Verify its original meaning and back up before restoring the appropriate `admin/member/visitor/tenant` preset through database maintenance.
 
+### Legacy placeholder identities
+
+SAPI cannot read XUIDs. Imported data (for example an iland migration) may store owner, member, and area-grant player IDs as placeholders `xuid:<XUID>`, with the old name in `land2_identity`. When a player joins (or runs any land command) and their name matches exactly one placeholder, the module moves that placeholder's ownership, memberships, and area grants to the real `player.id` and deletes the placeholder identity; the player's existing relations win and conflicting placeholder relations are dropped. Ambiguous names or renamed players are not bound automatically; administrators use `admin_legacy` and `admin_legacy_bind`.
+
 `manifest.schemaVersion: 2` versions the manifest format, not the business database. There is no separate database version table or full migration journal.
 
 ## Deletion and backups

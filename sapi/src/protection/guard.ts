@@ -99,7 +99,8 @@ export function registerProtection(cleanups: Array<() => void>): void {
     }
     if (source?.typeId === "minecraft:player") {
       const player = source as Player;
-      if (!allowAction(player, "entity.attack", hurt.location.x, hurt.location.y, hurt.location.z, hurt.dimension.id)) {
+      const permission = isHostile(hurt.typeId) ? "entity.attack_hostile" : "entity.attack";
+      if (!allowAction(player, permission, hurt.location.x, hurt.location.y, hurt.location.z, hurt.dimension.id)) {
         event.cancel = true;
       }
     }

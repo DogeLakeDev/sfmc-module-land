@@ -1,5 +1,9 @@
-## Unreleased
+## 1.1.0
 
+- 新增“公共”预置角色（模板键 `public`）：未加入领地的玩家默认使用它，只对世界交互生效，不能获得管理类权限；子区域可用 `area_member <领地> <区域> @public <角色>` 为“所有人”单独指定角色。旧领地没有公共角色时行为不变。
+- 新增权限 `entity.attack_hostile`（攻击已登记敌对生物）；`entity.attack` 改为只管非敌对实体。新领地的成员、访客、租客、公共模板默认允许攻击敌对生物。
+- 新增旧服占位身份 `xuid:<XUID>`：玩家进服或执行领地命令时按名字唯一匹配自动绑定到真实 `player.id`；管理员命令 `admin_legacy`、`admin_legacy_bind` 查看与手动绑定。
+- 修复橡木活板门 `minecraft:trapdoor`、橡木栅栏门 `minecraft:fence_gate` 被归为普通方块交互，音符盒 `minecraft:noteblock` 未归入红石机关。
 - 新增只读服务 `land.map`：返回全部领地的区块（按维度分组）与子区域水平范围，供网页地图绘制领地图层；不包含成员、角色、旗标与银行信息。
 - 修复 BDS 脚本引擎（QuickJS）缺少 `structuredClone` 导致模块加载即崩溃。
 - `map` 改用同一字形 `■` 加颜色区分格子，中心格标记玩家位置，地图行去掉 `[!]` 前缀，修复非等宽字符导致的错位。
