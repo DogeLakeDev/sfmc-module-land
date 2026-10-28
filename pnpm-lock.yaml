@@ -9,26 +9,26 @@ importers:
   .:
     devDependencies:
       '@minecraft/debug-utilities':
-        specifier: 1.0.0-beta.1.26.51-stable
-        version: 1.0.0-beta.1.26.51-stable(@minecraft/common@1.3.0)(@minecraft/server@2.11.0-beta.1.26.51-stable(@minecraft/common@1.3.0)(@minecraft/vanilla-data@1.26.51))
+        specifier: 1.0.0-beta.1.26.60-stable
+        version: 1.0.0-beta.1.26.60-stable(@minecraft/common@1.3.0)(@minecraft/server@2.12.0-beta.1.26.60-stable(@minecraft/common@1.3.0)(@minecraft/vanilla-data@1.26.60))
       '@minecraft/server':
-        specifier: 2.11.0-beta.1.26.51-stable
-        version: 2.11.0-beta.1.26.51-stable(@minecraft/common@1.3.0)(@minecraft/vanilla-data@1.26.51)
+        specifier: 2.12.0-beta.1.26.60-stable
+        version: 2.12.0-beta.1.26.60-stable(@minecraft/common@1.3.0)(@minecraft/vanilla-data@1.26.60)
       '@minecraft/server-net':
-        specifier: 1.0.0-beta.11940b24
-        version: 1.0.0-beta.11940b24
+        specifier: 1.0.0-beta.1.26.60-stable
+        version: 1.0.0-beta.1.26.60-stable(@minecraft/common@1.3.0)(@minecraft/server@2.12.0-beta.1.26.60-stable(@minecraft/common@1.3.0)(@minecraft/vanilla-data@1.26.60))
       '@minecraft/server-ui':
-        specifier: 2.3.0-beta.1.26.51-stable
-        version: 2.3.0-beta.1.26.51-stable(@minecraft/common@1.3.0)(@minecraft/server@2.11.0-beta.1.26.51-stable(@minecraft/common@1.3.0)(@minecraft/vanilla-data@1.26.51))
+        specifier: 2.4.0-beta.1.26.60-stable
+        version: 2.4.0-beta.1.26.60-stable(@minecraft/common@1.3.0)(@minecraft/server@2.12.0-beta.1.26.60-stable(@minecraft/common@1.3.0)(@minecraft/vanilla-data@1.26.60))
       '@minecraft/vanilla-data':
-        specifier: 1.26.51
-        version: 1.26.51
+        specifier: 1.26.60
+        version: 1.26.60
       '@sfmc-bds/eslint-plugin':
         specifier: ^0.1.1-beta.3
         version: 0.1.1-beta.3(eslint@10.11.0)(typescript@5.9.3)
       '@sfmc-bds/sdk':
         specifier: ^0.5.0
-        version: 0.5.0(@minecraft/server-admin@1.0.0-beta.11940b24)(@minecraft/server-net@1.0.0-beta.11940b24)(@minecraft/server-ui@2.3.0-beta.1.26.51-stable(@minecraft/common@1.3.0)(@minecraft/server@2.11.0-beta.1.26.51-stable(@minecraft/common@1.3.0)(@minecraft/vanilla-data@1.26.51)))(@minecraft/server@2.11.0-beta.1.26.51-stable(@minecraft/common@1.3.0)(@minecraft/vanilla-data@1.26.51))
+        version: 0.5.0(@minecraft/server-net@1.0.0-beta.1.26.60-stable(@minecraft/common@1.3.0)(@minecraft/server@2.12.0-beta.1.26.60-stable(@minecraft/common@1.3.0)(@minecraft/vanilla-data@1.26.60)))(@minecraft/server-ui@2.4.0-beta.1.26.60-stable(@minecraft/common@1.3.0)(@minecraft/server@2.12.0-beta.1.26.60-stable(@minecraft/common@1.3.0)(@minecraft/vanilla-data@1.26.60)))(@minecraft/server@2.12.0-beta.1.26.60-stable(@minecraft/common@1.3.0)(@minecraft/vanilla-data@1.26.60))
       '@types/node':
         specifier: ^22.13.0
         version: 22.20.4
@@ -121,32 +121,33 @@ packages:
   '@minecraft/common@1.3.0':
     resolution: {integrity: sha512-GLT8USFhvEyeTTFHZAgszbrnoT007hmXmK+aO4l+2A1up9/zwZ+4e8R8F0KcKrCWDjLEqkOJtPow0hQCcNJ++Q==}
 
-  '@minecraft/debug-utilities@1.0.0-beta.1.26.51-stable':
-    resolution: {integrity: sha512-6zXCtH2zk1px/SKyNnQumrRcb0HmfUXXnDZIJ4TXT2V/ZFiVG1tQGW+ZTd9RzJ8WlInfqPRBLw4rD3jibzVnnw==}
+  '@minecraft/debug-utilities@1.0.0-beta.1.26.60-stable':
+    resolution: {integrity: sha512-2IuZvQdTLcrubPu6gHwlvsVMPAES1xCoFmSHthqzdrR2fI4ey8HrOv63Jfqc9quTfIrQc8VhLoFTWtKbMkXXpQ==}
     peerDependencies:
       '@minecraft/common': ^1.0.0
-      '@minecraft/server': ^1.17.0 || ^2.0.0 || ^2.11.0-beta.1.26.51-stable
+      '@minecraft/server': ^1.17.0 || ^2.0.0 || ^2.12.0-beta.1.26.60-stable
 
-  '@minecraft/server-admin@1.0.0-beta.11940b24':
-    resolution: {integrity: sha512-UZ8YyB8mvF31f22+uM67gJums9d6NDgz9AQ2l4a++EHUP9uen0m3aaBaqM9RyumJpRBJbv/hslAKOyeDT01qew==}
-
-  '@minecraft/server-net@1.0.0-beta.11940b24':
-    resolution: {integrity: sha512-jiL03mGNpADCfvPDyydheEAhdi7J++nx5nB7Gyu3GImDlV5pv9uTwKCrnmILrLs4qJTtxhuRLKBKRlVyYDpKMw==}
-
-  '@minecraft/server-ui@2.3.0-beta.1.26.51-stable':
-    resolution: {integrity: sha512-kXKp3IHdK5ggipJxS0EHQsVkRkOHSd3idQq/mQhchXujzWPPCbB40kOW0Ociw5q9m0L8hQXfqtNahPHzXpfR+Q==}
+  '@minecraft/server-net@1.0.0-beta.1.26.60-stable':
+    resolution: {integrity: sha512-c/7M/VFDEJ/MoJscfOj43Z1h25Ym0Lk+GMa1QUjLeG93Y5A31yZ/fEiUBZN2rgCX0spNl4Kw0wqaxMuJyZeyjQ==}
     peerDependencies:
       '@minecraft/common': ^1.0.0
-      '@minecraft/server': ^2.0.0 || ^2.11.0-beta.1.26.51-stable
+      '@minecraft/server': ^1.17.0 || ^2.0.0
+      '@minecraft/server-admin': ^1.0.0-beta.1.26.60-stable
 
-  '@minecraft/server@2.11.0-beta.1.26.51-stable':
-    resolution: {integrity: sha512-AEmpZPNW+stdTOdCCUSCWKVBUHIevDGE0hCr+XUGpZPuQQH0k9xrST1y47NuRQlw/riuQAAjA4UsG6tVjwN1jA==}
+  '@minecraft/server-ui@2.4.0-beta.1.26.60-stable':
+    resolution: {integrity: sha512-R8SrLY2IAMF3uqEQ9lu5ljx64MVMc72ZF6cRjXGxl8E1jdWyALoKxvBsCNFB61ssTmMYVWh3uOBi7G//VQeLwA==}
+    peerDependencies:
+      '@minecraft/common': ^1.0.0
+      '@minecraft/server': ^2.0.0 || ^2.12.0-beta.1.26.60-stable
+
+  '@minecraft/server@2.12.0-beta.1.26.60-stable':
+    resolution: {integrity: sha512-eJZLQ+Z/BPdXdtV2fVbPoSfEDTIW2pJtqtA0LFGckKFyZnDZ4liwfAZqb+uIF3jZLb7jNSM7gkdgD9vwq3PfKw==}
     peerDependencies:
       '@minecraft/common': ^1.2.0
       '@minecraft/vanilla-data': '>=1.20.70'
 
-  '@minecraft/vanilla-data@1.26.51':
-    resolution: {integrity: sha512-3ST6+e02agIpDEbtoKQtkIlwzYMgGv+DUkHeG+qlzU2VuWtn/pfNuARjspHLd+uXACpVvxeCz+gO/PG5VdYP8w==}
+  '@minecraft/vanilla-data@1.26.60':
+    resolution: {integrity: sha512-6ARh4/fbNRA4XRRrMO3ys0ldO208ipcpyLAf4tpc3KXw/E6EUeaFKuFqJ2ESMQ6sSUUIfK1dNXm9MtFdWj9BPg==}
 
   '@sfmc-bds/eslint-plugin@0.1.1-beta.3':
     resolution: {integrity: sha512-8kGrq8DnmQSBqANfiFK/GaTVvJ+ksKuBCFsvfgCwtqYJVlHjhyRs734CfWsda9D/b68GZ67R6KBhSz61DCsxzA==}
@@ -599,28 +600,27 @@ snapshots:
 
   '@minecraft/common@1.3.0': {}
 
-  '@minecraft/debug-utilities@1.0.0-beta.1.26.51-stable(@minecraft/common@1.3.0)(@minecraft/server@2.11.0-beta.1.26.51-stable(@minecraft/common@1.3.0)(@minecraft/vanilla-data@1.26.51))':
+  '@minecraft/debug-utilities@1.0.0-beta.1.26.60-stable(@minecraft/common@1.3.0)(@minecraft/server@2.12.0-beta.1.26.60-stable(@minecraft/common@1.3.0)(@minecraft/vanilla-data@1.26.60))':
     dependencies:
       '@minecraft/common': 1.3.0
-      '@minecraft/server': 2.11.0-beta.1.26.51-stable(@minecraft/common@1.3.0)(@minecraft/vanilla-data@1.26.51)
+      '@minecraft/server': 2.12.0-beta.1.26.60-stable(@minecraft/common@1.3.0)(@minecraft/vanilla-data@1.26.60)
 
-  '@minecraft/server-admin@1.0.0-beta.11940b24': {}
-
-  '@minecraft/server-net@1.0.0-beta.11940b24':
-    dependencies:
-      '@minecraft/server-admin': 1.0.0-beta.11940b24
-
-  '@minecraft/server-ui@2.3.0-beta.1.26.51-stable(@minecraft/common@1.3.0)(@minecraft/server@2.11.0-beta.1.26.51-stable(@minecraft/common@1.3.0)(@minecraft/vanilla-data@1.26.51))':
+  '@minecraft/server-net@1.0.0-beta.1.26.60-stable(@minecraft/common@1.3.0)(@minecraft/server@2.12.0-beta.1.26.60-stable(@minecraft/common@1.3.0)(@minecraft/vanilla-data@1.26.60))':
     dependencies:
       '@minecraft/common': 1.3.0
-      '@minecraft/server': 2.11.0-beta.1.26.51-stable(@minecraft/common@1.3.0)(@minecraft/vanilla-data@1.26.51)
+      '@minecraft/server': 2.12.0-beta.1.26.60-stable(@minecraft/common@1.3.0)(@minecraft/vanilla-data@1.26.60)
 
-  '@minecraft/server@2.11.0-beta.1.26.51-stable(@minecraft/common@1.3.0)(@minecraft/vanilla-data@1.26.51)':
+  '@minecraft/server-ui@2.4.0-beta.1.26.60-stable(@minecraft/common@1.3.0)(@minecraft/server@2.12.0-beta.1.26.60-stable(@minecraft/common@1.3.0)(@minecraft/vanilla-data@1.26.60))':
     dependencies:
       '@minecraft/common': 1.3.0
-      '@minecraft/vanilla-data': 1.26.51
+      '@minecraft/server': 2.12.0-beta.1.26.60-stable(@minecraft/common@1.3.0)(@minecraft/vanilla-data@1.26.60)
 
-  '@minecraft/vanilla-data@1.26.51': {}
+  '@minecraft/server@2.12.0-beta.1.26.60-stable(@minecraft/common@1.3.0)(@minecraft/vanilla-data@1.26.60)':
+    dependencies:
+      '@minecraft/common': 1.3.0
+      '@minecraft/vanilla-data': 1.26.60
+
+  '@minecraft/vanilla-data@1.26.60': {}
 
   '@sfmc-bds/eslint-plugin@0.1.1-beta.3(eslint@10.11.0)(typescript@5.9.3)':
     dependencies:
@@ -630,12 +630,11 @@ snapshots:
       - supports-color
       - typescript
 
-  '@sfmc-bds/sdk@0.5.0(@minecraft/server-admin@1.0.0-beta.11940b24)(@minecraft/server-net@1.0.0-beta.11940b24)(@minecraft/server-ui@2.3.0-beta.1.26.51-stable(@minecraft/common@1.3.0)(@minecraft/server@2.11.0-beta.1.26.51-stable(@minecraft/common@1.3.0)(@minecraft/vanilla-data@1.26.51)))(@minecraft/server@2.11.0-beta.1.26.51-stable(@minecraft/common@1.3.0)(@minecraft/vanilla-data@1.26.51))':
+  '@sfmc-bds/sdk@0.5.0(@minecraft/server-net@1.0.0-beta.1.26.60-stable(@minecraft/common@1.3.0)(@minecraft/server@2.12.0-beta.1.26.60-stable(@minecraft/common@1.3.0)(@minecraft/vanilla-data@1.26.60)))(@minecraft/server-ui@2.4.0-beta.1.26.60-stable(@minecraft/common@1.3.0)(@minecraft/server@2.12.0-beta.1.26.60-stable(@minecraft/common@1.3.0)(@minecraft/vanilla-data@1.26.60)))(@minecraft/server@2.12.0-beta.1.26.60-stable(@minecraft/common@1.3.0)(@minecraft/vanilla-data@1.26.60))':
     optionalDependencies:
-      '@minecraft/server': 2.11.0-beta.1.26.51-stable(@minecraft/common@1.3.0)(@minecraft/vanilla-data@1.26.51)
-      '@minecraft/server-admin': 1.0.0-beta.11940b24
-      '@minecraft/server-net': 1.0.0-beta.11940b24
-      '@minecraft/server-ui': 2.3.0-beta.1.26.51-stable(@minecraft/common@1.3.0)(@minecraft/server@2.11.0-beta.1.26.51-stable(@minecraft/common@1.3.0)(@minecraft/vanilla-data@1.26.51))
+      '@minecraft/server': 2.12.0-beta.1.26.60-stable(@minecraft/common@1.3.0)(@minecraft/vanilla-data@1.26.60)
+      '@minecraft/server-net': 1.0.0-beta.1.26.60-stable(@minecraft/common@1.3.0)(@minecraft/server@2.12.0-beta.1.26.60-stable(@minecraft/common@1.3.0)(@minecraft/vanilla-data@1.26.60))
+      '@minecraft/server-ui': 2.4.0-beta.1.26.60-stable(@minecraft/common@1.3.0)(@minecraft/server@2.12.0-beta.1.26.60-stable(@minecraft/common@1.3.0)(@minecraft/vanilla-data@1.26.60))
 
   '@types/esrecurse@4.3.1': {}
 

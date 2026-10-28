@@ -1,6 +1,6 @@
 {
   "name": "@sfmc-bds/module-land",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "packageManager": "pnpm@10.8.0",
   "type": "module",
   "description": "SAPI module: 区块领地、三维子区域、成员角色与领地银行",
@@ -26,11 +26,11 @@
     "format": "prettier --write ."
   },
   "devDependencies": {
-    "@minecraft/debug-utilities": "1.0.0-beta.1.26.51-stable",
-    "@minecraft/server": "2.11.0-beta.1.26.51-stable",
-    "@minecraft/server-net": "1.0.0-beta.11940b24",
-    "@minecraft/server-ui": "2.3.0-beta.1.26.51-stable",
-    "@minecraft/vanilla-data": "1.26.51",
+    "@minecraft/debug-utilities": "1.0.0-beta.1.26.60-stable",
+    "@minecraft/server": "2.12.0-beta.1.26.60-stable",
+    "@minecraft/server-net": "1.0.0-beta.1.26.60-stable",
+    "@minecraft/server-ui": "2.4.0-beta.1.26.60-stable",
+    "@minecraft/vanilla-data": "1.26.60",
     "@sfmc-bds/eslint-plugin": "^0.1.1-beta.3",
     "@sfmc-bds/sdk": "^0.5.0",
     "@types/node": "^22.13.0",

@@ -1,3 +1,14 @@
+## 1.2.0
+
+- 新增领地界面：玩家输入 `/c:land`（不带子命令）打开，共 15 个页面覆盖全部子命令；页面为 UI Studio 声明式 UI 工程（`sapi/src/ui`），可在 Studio 中打开模块目录编辑。控制台不带子命令仍显示帮助，`help` 末尾新增界面入口提示。
+- 新增界面服务 `land.ui.*`：`land.ui.exec` 复用命令路由执行子命令（授权、校验、提示与输入命令一致，提示改为回到表单状态行），其余为只读视图（首页、详情、区块、地图、成员、角色、区域、旗标、银行、市场、管理员）。
+- 页面中每个控件与文本前都放置 `spacer`（可见条件与该控件一致），缓解 DDUI 中文排版拥挤；测试会检查新增控件是否遵守这一约定。
+- 删除 0.x 遗留且已失效的 `status` / `rename` 页面文件。
+- 新增管理员维护命令：`admin_merge`（合并同一领主的领地，`@connected` 合并整片相连领地）、`admin_area_prune`（按名称前缀清理无自身数据的子区域）、`admin_relevel`（等级表调整后把超出上限的领地升到放得下的等级，只升不降）；均先预览，带 `confirm` 才执行。新增事件 `land.merged`、`land.level.changed`，合并产生的 `land.deleted` 附带 `mergedInto`。
+- 合并与重排按“区块上限 ≥ 区块数的最低等级”取级，适用于配置文件 `levels` 中任意级数的等级表。
+- 等级项的容量（区块、成员、子区域、角色）可写 `-1` 表示不限；`quota` 命令与资金页显示“不限”。
+- 适配 BDS 1.26.60：`@minecraft/server` 升级到 2.12.0-beta、`@minecraft/server-ui` 升级到 2.4.0-beta，`@minecraft/server-net`、`@minecraft/debug-utilities` 与 `@minecraft/vanilla-data` 同步到 1.26.60。安装后聚合行为包声明 `@minecraft/server@2.12.0-beta`，只能在 BDS 1.26.60 上加载；1.26.52 及更早的服务器请继续使用上一版本。
+
 ## 1.1.0
 
 - 新增“公共”预置角色（模板键 `public`）：未加入领地的玩家默认使用它，只对世界交互生效，不能获得管理类权限；子区域可用 `area_member <领地> <区域> @public <角色>` 为“所有人”单独指定角色。旧领地没有公共角色时行为不变。
