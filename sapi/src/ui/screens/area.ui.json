@@ -1,0 +1,988 @@
+{
+  "$schema": "https://cdn.jsdelivr.net/gh/DogeLakeDev/ScriptsForMinecraftServer@main/modules/sdk/@sfmc-sdk/schemas/ui-screen.v1.schema.json",
+  "formatVersion": 1,
+  "id": "land.area",
+  "name": "land.area",
+  "presentation": "form",
+  "title": "子区域",
+  "params": {
+    "landId": {
+      "type": "string",
+      "required": true
+    },
+    "areaId": {
+      "type": "string",
+      "required": true
+    }
+  },
+  "state": {
+    "newName": {
+      "type": "string",
+      "default": "",
+      "maxLength": 32
+    },
+    "description": {
+      "type": "string",
+      "default": "",
+      "maxLength": 200
+    },
+    "targetId": {
+      "type": "string",
+      "default": ""
+    },
+    "roleId": {
+      "type": "string",
+      "default": ""
+    },
+    "rentPrice": {
+      "type": "number",
+      "default": 100,
+      "min": 0,
+      "step": 1
+    },
+    "rentHours": {
+      "type": "number",
+      "default": 24,
+      "min": 1,
+      "step": 1
+    },
+    "salePrice": {
+      "type": "number",
+      "default": 1000,
+      "min": 0,
+      "step": 1
+    }
+  },
+  "load": {
+    "view": {
+      "service": "land.ui.area",
+      "input": {
+        "playerId": "{{player.id}}",
+        "landId": "{{params.landId}}",
+        "areaId": "{{params.areaId}}"
+      }
+    }
+  },
+  "body": [
+    {
+      "id": "ready",
+      "type": "when",
+      "condition": {
+        "ref": "data.view"
+      },
+      "content": [
+        {
+          "id": "sp-title",
+          "type": "spacer"
+        },
+        {
+          "id": "title",
+          "type": "header",
+          "text": "{{data.view.area.name}}"
+        },
+        {
+          "id": "sp-box",
+          "type": "spacer"
+        },
+        {
+          "id": "box",
+          "type": "info",
+          "items": [
+            "所属领地：{{data.view.land.name}}",
+            "范围：{{data.view.area.boxText}}",
+            "维度：{{data.view.area.dimensionId}}"
+          ]
+        },
+        {
+          "id": "sp-description",
+          "type": "spacer",
+          "visibleWhen": {
+            "ref": "data.view.area.description"
+          }
+        },
+        {
+          "id": "description",
+          "type": "text",
+          "text": "{{data.view.area.description}}",
+          "tone": "muted",
+          "visibleWhen": {
+            "ref": "data.view.area.description"
+          }
+        },
+        {
+          "id": "lease",
+          "type": "when",
+          "condition": {
+            "ref": "data.view.hasLease"
+          },
+          "content": [
+            {
+              "id": "sp-lease-info",
+              "type": "spacer"
+            },
+            {
+              "id": "lease-info",
+              "type": "info",
+              "items": [
+                "租客：{{data.view.lease.tenantName}} · 剩余约 {{data.view.lease.hoursLeft}} 小时 · 租金 {{data.view.lease.price}}"
+              ]
+            },
+            {
+              "id": "my-lease",
+              "type": "when",
+              "condition": {
+                "ref": "data.view.lease.mine"
+              },
+              "content": [
+                {
+                  "id": "sp-renew",
+                  "type": "spacer"
+                },
+                {
+                  "id": "renew",
+                  "type": "button",
+                  "label": "续租",
+                  "tone": "primary",
+                  "trigger": {
+                    "type": "action",
+                    "action": "renew"
+                  }
+                },
+                {
+                  "id": "sp-end-lease",
+                  "type": "spacer"
+                },
+                {
+                  "id": "end-lease",
+                  "type": "button",
+                  "label": "退租",
+                  "tone": "danger",
+                  "trigger": {
+                    "type": "action",
+                    "action": "endLease"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "sp-rent-info",
+          "type": "spacer",
+          "visibleWhen": {
+            "ref": "data.view.rent"
+          }
+        },
+        {
+          "id": "rent-info",
+          "type": "text",
+          "text": "出租中：{{data.view.rent.price}} / {{data.view.rent.periodHours}} 小时",
+          "visibleWhen": {
+            "ref": "data.view.rent"
+          }
+        },
+        {
+          "id": "sp-sale-info",
+          "type": "spacer",
+          "visibleWhen": {
+            "ref": "data.view.sale"
+          }
+        },
+        {
+          "id": "sale-info",
+          "type": "text",
+          "text": "出售中：{{data.view.sale.price}}",
+          "visibleWhen": {
+            "ref": "data.view.sale"
+          }
+        },
+        {
+          "id": "grants",
+          "type": "when",
+          "condition": {
+            "ref": "data.view.caps.members"
+          },
+          "content": [
+            {
+              "id": "sp-d-grants",
+              "type": "spacer"
+            },
+            {
+              "id": "d-grants",
+              "type": "divider"
+            },
+            {
+              "id": "sp-grant-title",
+              "type": "spacer"
+            },
+            {
+              "id": "grant-title",
+              "type": "header",
+              "text": "区域授权（覆盖领地角色）"
+            },
+            {
+              "id": "overrides",
+              "type": "each",
+              "source": "data.view.overrides",
+              "as": "grant",
+              "template": [
+                {
+                  "id": "sp-grant-line",
+                  "type": "spacer"
+                },
+                {
+                  "id": "grant-line",
+                  "type": "text",
+                  "text": "{{grant.playerName}} → {{grant.roleName}}"
+                }
+              ],
+              "empty": [
+                {
+                  "id": "sp-overrides-empty",
+                  "type": "spacer"
+                },
+                {
+                  "id": "overrides-empty",
+                  "type": "info",
+                  "items": [
+                    "还没有单独授权，区域内沿用领地角色。"
+                  ],
+                  "tone": "muted"
+                }
+              ]
+            },
+            {
+              "id": "sp-target",
+              "type": "spacer"
+            },
+            {
+              "id": "target",
+              "type": "dropdown",
+              "label": "对象",
+              "bind": "state.targetId",
+              "options": {
+                "source": "data.view.targets",
+                "as": "t",
+                "value": "{{t.id}}",
+                "label": "{{t.name}}"
+              }
+            },
+            {
+              "id": "sp-role",
+              "type": "spacer"
+            },
+            {
+              "id": "role",
+              "type": "dropdown",
+              "label": "角色",
+              "bind": "state.roleId",
+              "options": {
+                "source": "data.view.roles",
+                "as": "r",
+                "value": "{{r.id}}",
+                "label": "{{r.name}}"
+              }
+            },
+            {
+              "id": "sp-grant",
+              "type": "spacer"
+            },
+            {
+              "id": "grant",
+              "type": "button",
+              "label": "设置区域授权",
+              "tone": "primary",
+              "trigger": {
+                "type": "action",
+                "action": "grant"
+              }
+            }
+          ]
+        },
+        {
+          "id": "sp-flags",
+          "type": "spacer",
+          "visibleWhen": {
+            "ref": "data.view.caps.flags"
+          }
+        },
+        {
+          "id": "flags",
+          "type": "button",
+          "label": "区域旗标",
+          "visibleWhen": {
+            "ref": "data.view.caps.flags"
+          },
+          "trigger": {
+            "type": "navigate",
+            "to": "land.flags",
+            "params": {
+              "landId": "{{params.landId}}",
+              "areaId": "{{params.areaId}}"
+            }
+          }
+        },
+        {
+          "id": "edit",
+          "type": "when",
+          "condition": {
+            "ref": "data.view.caps.areas"
+          },
+          "content": [
+            {
+              "id": "sp-d-edit",
+              "type": "spacer"
+            },
+            {
+              "id": "d-edit",
+              "type": "divider"
+            },
+            {
+              "id": "sp-edit-title",
+              "type": "spacer"
+            },
+            {
+              "id": "edit-title",
+              "type": "header",
+              "text": "修改区域"
+            },
+            {
+              "id": "sp-new-name",
+              "type": "spacer"
+            },
+            {
+              "id": "new-name",
+              "type": "textField",
+              "label": "新名称",
+              "bind": "state.newName",
+              "placeholder": "{{data.view.area.name}}"
+            },
+            {
+              "id": "sp-rename",
+              "type": "spacer"
+            },
+            {
+              "id": "rename",
+              "type": "button",
+              "label": "改名",
+              "trigger": {
+                "type": "action",
+                "action": "rename"
+              }
+            },
+            {
+              "id": "sp-description-input",
+              "type": "spacer"
+            },
+            {
+              "id": "description-input",
+              "type": "textField",
+              "label": "说明",
+              "bind": "state.description",
+              "placeholder": "{{data.view.area.description}}"
+            },
+            {
+              "id": "sp-describe",
+              "type": "spacer"
+            },
+            {
+              "id": "describe",
+              "type": "button",
+              "label": "更新说明",
+              "trigger": {
+                "type": "action",
+                "action": "describe"
+              }
+            },
+            {
+              "id": "sp-resize",
+              "type": "spacer",
+              "visibleWhen": {
+                "ref": "data.view.selectionReady"
+              }
+            },
+            {
+              "id": "resize",
+              "type": "button",
+              "label": "按当前选区调整范围",
+              "visibleWhen": {
+                "ref": "data.view.selectionReady"
+              },
+              "trigger": {
+                "type": "action",
+                "action": "resize"
+              }
+            },
+            {
+              "id": "sp-delete",
+              "type": "spacer"
+            },
+            {
+              "id": "delete",
+              "type": "button",
+              "label": "删除区域",
+              "tone": "danger",
+              "trigger": {
+                "type": "action",
+                "action": "delete"
+              }
+            }
+          ]
+        },
+        {
+          "id": "trade",
+          "type": "when",
+          "condition": {
+            "ref": "data.view.caps.economy"
+          },
+          "content": [
+            {
+              "id": "sp-d-trade",
+              "type": "spacer"
+            },
+            {
+              "id": "d-trade",
+              "type": "divider"
+            },
+            {
+              "id": "sp-trade-title",
+              "type": "spacer"
+            },
+            {
+              "id": "trade-title",
+              "type": "header",
+              "text": "出租与出售"
+            },
+            {
+              "id": "sp-rent-price",
+              "type": "spacer"
+            },
+            {
+              "id": "rent-price",
+              "type": "textField",
+              "label": "租金",
+              "bind": "state.rentPrice"
+            },
+            {
+              "id": "sp-rent-hours",
+              "type": "spacer"
+            },
+            {
+              "id": "rent-hours",
+              "type": "textField",
+              "label": "租期（小时）",
+              "bind": "state.rentHours"
+            },
+            {
+              "id": "sp-rent-publish",
+              "type": "spacer"
+            },
+            {
+              "id": "rent-publish",
+              "type": "button",
+              "label": "挂牌出租",
+              "trigger": {
+                "type": "action",
+                "action": "rentPublish"
+              }
+            },
+            {
+              "id": "sp-rent-cancel",
+              "type": "spacer",
+              "visibleWhen": {
+                "ref": "data.view.rent"
+              }
+            },
+            {
+              "id": "rent-cancel",
+              "type": "button",
+              "label": "取消出租",
+              "visibleWhen": {
+                "ref": "data.view.rent"
+              },
+              "trigger": {
+                "type": "action",
+                "action": "rentCancel"
+              }
+            },
+            {
+              "id": "sp-sale-price",
+              "type": "spacer"
+            },
+            {
+              "id": "sale-price",
+              "type": "textField",
+              "label": "售价",
+              "bind": "state.salePrice"
+            },
+            {
+              "id": "sp-sell",
+              "type": "spacer"
+            },
+            {
+              "id": "sell",
+              "type": "button",
+              "label": "挂牌出售",
+              "trigger": {
+                "type": "action",
+                "action": "sell"
+              }
+            },
+            {
+              "id": "sp-unsell",
+              "type": "spacer",
+              "visibleWhen": {
+                "ref": "data.view.sale"
+              }
+            },
+            {
+              "id": "unsell",
+              "type": "button",
+              "label": "取消出售",
+              "visibleWhen": {
+                "ref": "data.view.sale"
+              },
+              "trigger": {
+                "type": "action",
+                "action": "unsell"
+              }
+            }
+          ]
+        },
+        {
+          "id": "sp-d-end",
+          "type": "spacer"
+        },
+        {
+          "id": "d-end",
+          "type": "divider"
+        },
+        {
+          "id": "sp-back",
+          "type": "spacer"
+        },
+        {
+          "id": "back",
+          "type": "button",
+          "label": "返回",
+          "trigger": {
+            "type": "back"
+          }
+        }
+      ]
+    },
+    {
+      "id": "missing",
+      "type": "when",
+      "condition": {
+        "op": "not",
+        "args": [
+          {
+            "ref": "data.view"
+          }
+        ]
+      },
+      "content": [
+        {
+          "id": "sp-missing-tip",
+          "type": "spacer"
+        },
+        {
+          "id": "missing-tip",
+          "type": "info",
+          "items": [
+            "读取失败：领地可能已被删除或改名，也可能数据仍在加载。"
+          ],
+          "tone": "warning"
+        },
+        {
+          "id": "sp-missing-back",
+          "type": "spacer"
+        },
+        {
+          "id": "missing-back",
+          "type": "button",
+          "label": "返回",
+          "trigger": {
+            "type": "back"
+          }
+        }
+      ]
+    }
+  ],
+  "actions": {
+    "renew": {
+      "confirm": {
+        "title": "续租",
+        "body": "续租「{{data.view.area.name}}」并支付 {{data.view.lease.price}}？",
+        "confirmText": "续租"
+      },
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "rent_renew",
+          "args": [
+            "{{data.view.land.name}}",
+            "{{data.view.area.name}}"
+          ]
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "refresh"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    },
+    "endLease": {
+      "confirm": {
+        "title": "退租",
+        "body": "提前结束「{{data.view.area.name}}」的租约？",
+        "confirmText": "退租",
+        "danger": true
+      },
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "rent_end",
+          "args": [
+            "{{data.view.land.name}}",
+            "{{data.view.area.name}}",
+            "confirm"
+          ]
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "refresh"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    },
+    "grant": {
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "area_member",
+          "args": [
+            "{{data.view.land.name}}",
+            "{{data.view.area.name}}",
+            "{{state.targetId}}",
+            "{{state.roleId}}"
+          ]
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "refresh"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    },
+    "rename": {
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "area_rename",
+          "args": [
+            "{{data.view.land.name}}",
+            "{{data.view.area.name}}",
+            "{{state.newName}}"
+          ]
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "setState",
+          "values": {
+            "newName": ""
+          }
+        },
+        {
+          "effect": "refresh"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    },
+    "describe": {
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "area_describe",
+          "args": [
+            "{{data.view.land.name}}",
+            "{{data.view.area.name}}",
+            "{{state.description}}"
+          ]
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "refresh"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    },
+    "resize": {
+      "confirm": {
+        "title": "调整范围",
+        "body": "把「{{data.view.area.name}}」的范围改为当前选区？",
+        "confirmText": "调整"
+      },
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "area_resize",
+          "args": [
+            "{{data.view.land.name}}",
+            "{{data.view.area.name}}"
+          ]
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "refresh"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    },
+    "delete": {
+      "confirm": {
+        "title": "删除区域",
+        "body": "删除子区域「{{data.view.area.name}}」？此操作无法撤销。请输入区域名确认。",
+        "confirmText": "删除",
+        "danger": true,
+        "challenge": "{{data.view.area.name}}"
+      },
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "area_delete",
+          "args": [
+            "{{data.view.land.name}}",
+            "{{data.view.area.name}}",
+            "confirm"
+          ]
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "back"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    },
+    "rentPublish": {
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "rent_publish",
+          "args": [
+            "{{data.view.land.name}}",
+            "{{data.view.area.name}}",
+            "{{state.rentPrice}}",
+            "{{state.rentHours}}"
+          ]
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "refresh"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    },
+    "rentCancel": {
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "rent_cancel",
+          "args": [
+            "{{data.view.land.name}}",
+            "{{data.view.area.name}}"
+          ]
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "refresh"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    },
+    "sell": {
+      "confirm": {
+        "title": "出售区域",
+        "body": "以 {{state.salePrice}} 挂牌出售「{{data.view.area.name}}」？",
+        "confirmText": "挂牌"
+      },
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "sell_area",
+          "args": [
+            "{{data.view.land.name}}",
+            "{{data.view.area.name}}",
+            "{{state.salePrice}}"
+          ]
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "refresh"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    },
+    "unsell": {
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "unsell",
+          "args": [
+            "{{data.view.land.name}}",
+            "{{data.view.area.name}}"
+          ]
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "refresh"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    }
+  }
+}

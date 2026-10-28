@@ -50,7 +50,7 @@ At 20 TPS, 20 ticks is roughly one second and 6000 ticks is five minutes. Tick-b
 
 *Roles count all non-reserved roles, including the initial member and visitor templates. With the default level-one cap of 8, those two consume two slots. Members count admin/member/trusted relations; pending invitations do not count. A normal area excludes the default area.
 
-Ownership uses `quotas.lands`; chunk/member/area/role capacity uses the current entry in `levels`. Missing level entries fall back to the first rule. Configure finite non-negative values and unique increasing levels; the parser does not comprehensively validate level/group constraints.
+Ownership uses `quotas.lands`; chunk/member/area/role capacity uses the current entry in `levels`. Missing level entries fall back to the first rule. Configure finite non-negative values and unique increasing levels; the parser does not comprehensively validate level/group constraints. Setting a level's `chunks / members / areas / roles` to `-1` makes that cap unlimited; `quota` and the menu show "unlimited".
 
 ## Permission-based increases
 

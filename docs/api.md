@@ -30,6 +30,8 @@
 
 命令中的 `confirm` 不属于公开 API 输入。删除、角色删除等 API 会直接执行领域校验和修改；消费方负责自己的用户确认流程。
 
+`land.ui.*` 是本模块领地界面的内部服务（页面数据源与 `land.ui.exec` 命令执行），输入里的 `playerId` 必须是在线玩家，接口形状随界面调整，不属于公开 API，其他模块不应声明或调用。
+
 ## 通用输入与返回类型
 
 `?` 表示可选，未标类型的标识符/名称均为 string。写接口的 `land` 可用领地名称或 ID，优先于 `landId`；务必提供其中一个。角色与区域参数在支持的接口中可用名称或 ID。建议保存稳定 ID。
@@ -219,8 +221,10 @@ export async function install(services: ServiceClient): Promise<() => void> {
 | 事件 | 主要载荷字段 |
 | --- | --- |
 | land.created | `actorId, actorName, landId, name` |
-| land.deleted | `actorId, landId, name` |
+| land.deleted | `actorId, landId, name`；因合并删除时另含 `mergedInto`（目标领地 ID） |
 | land.claimed / land.unclaimed | `actorId, landId, count` |
+| land.merged | `actorId, landId, sourceIds, chunks, level` |
+| land.level.changed | `actorId, landId, from, level, reason:"merge"\|"relevel"`（管理员合并或等级重排，不经银行升级流程） |
 | land.area.changed | `actorId, landId, areaId, op:"create"\|"resize"\|"delete"` |
 | land.transferred | `actorId, landId, to` |
 | land.member.changed | `landId, playerId`，附操作相关字段 |

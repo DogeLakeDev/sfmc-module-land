@@ -1,0 +1,787 @@
+{
+  "$schema": "https://cdn.jsdelivr.net/gh/DogeLakeDev/ScriptsForMinecraftServer@main/modules/sdk/@sfmc-sdk/schemas/ui-screen.v1.schema.json",
+  "formatVersion": 1,
+  "id": "land.finance",
+  "name": "land.finance",
+  "presentation": "form",
+  "title": "银行与等级",
+  "params": {
+    "landId": {
+      "type": "string",
+      "required": true
+    }
+  },
+  "state": {
+    "amount": {
+      "type": "number",
+      "default": 100,
+      "min": 1,
+      "step": 1
+    },
+    "taxAmount": {
+      "type": "number",
+      "default": 0,
+      "min": 0,
+      "step": 1
+    },
+    "taxHours": {
+      "type": "number",
+      "default": 24,
+      "min": 1,
+      "step": 1
+    },
+    "salePrice": {
+      "type": "number",
+      "default": 10000,
+      "min": 0,
+      "step": 1
+    }
+  },
+  "load": {
+    "view": {
+      "service": "land.ui.finance",
+      "input": {
+        "playerId": "{{player.id}}",
+        "landId": "{{params.landId}}"
+      }
+    }
+  },
+  "body": [
+    {
+      "id": "ready",
+      "type": "when",
+      "condition": {
+        "ref": "data.view"
+      },
+      "content": [
+        {
+          "id": "sp-title",
+          "type": "spacer"
+        },
+        {
+          "id": "title",
+          "type": "header",
+          "text": "{{data.view.land.name}} · 银行与等级"
+        },
+        {
+          "id": "sp-balance",
+          "type": "spacer",
+          "visibleWhen": {
+            "ref": "data.view.balanceVisible"
+          }
+        },
+        {
+          "id": "balance",
+          "type": "text",
+          "text": "银行余额：{{data.view.balance}}",
+          "visibleWhen": {
+            "ref": "data.view.balanceVisible"
+          }
+        },
+        {
+          "id": "sp-balance-hidden",
+          "type": "spacer",
+          "visibleWhen": {
+            "op": "not",
+            "args": [
+              {
+                "ref": "data.view.balanceVisible"
+              }
+            ]
+          }
+        },
+        {
+          "id": "balance-hidden",
+          "type": "text",
+          "text": "你没有查看银行余额的权限。",
+          "tone": "muted",
+          "visibleWhen": {
+            "op": "not",
+            "args": [
+              {
+                "ref": "data.view.balanceVisible"
+              }
+            ]
+          }
+        },
+        {
+          "id": "sp-level",
+          "type": "spacer"
+        },
+        {
+          "id": "level",
+          "type": "info",
+          "items": [
+            "等级：L{{data.view.level}} · 状态：{{data.view.statusLabel}}"
+          ]
+        },
+        {
+          "id": "sp-next",
+          "type": "spacer",
+          "visibleWhen": {
+            "op": "not",
+            "args": [
+              {
+                "ref": "data.view.maxLevel"
+              }
+            ]
+          }
+        },
+        {
+          "id": "next",
+          "type": "text",
+          "text": "下一级 L{{data.view.nextLevel}} 需要从银行支付 {{data.view.nextCost}}",
+          "visibleWhen": {
+            "op": "not",
+            "args": [
+              {
+                "ref": "data.view.maxLevel"
+              }
+            ]
+          }
+        },
+        {
+          "id": "sp-max",
+          "type": "spacer",
+          "visibleWhen": {
+            "ref": "data.view.maxLevel"
+          }
+        },
+        {
+          "id": "max",
+          "type": "text",
+          "text": "已经是最高等级。",
+          "tone": "muted",
+          "visibleWhen": {
+            "ref": "data.view.maxLevel"
+          }
+        },
+        {
+          "id": "sp-upkeep",
+          "type": "spacer"
+        },
+        {
+          "id": "upkeep",
+          "type": "info",
+          "items": [
+            "维护费：{{data.view.upkeep}} · 约 {{data.view.upkeepHours}} 小时后结算"
+          ]
+        },
+        {
+          "id": "sp-tax-on",
+          "type": "spacer",
+          "visibleWhen": {
+            "ref": "data.view.tax.enabled"
+          }
+        },
+        {
+          "id": "tax-on",
+          "type": "text",
+          "text": "成员税：每 {{data.view.tax.hours}} 小时 {{data.view.tax.amount}}",
+          "visibleWhen": {
+            "ref": "data.view.tax.enabled"
+          }
+        },
+        {
+          "id": "sp-tax-off",
+          "type": "spacer",
+          "visibleWhen": {
+            "op": "not",
+            "args": [
+              {
+                "ref": "data.view.tax.enabled"
+              }
+            ]
+          }
+        },
+        {
+          "id": "tax-off",
+          "type": "text",
+          "text": "未开启成员税。",
+          "tone": "muted",
+          "visibleWhen": {
+            "op": "not",
+            "args": [
+              {
+                "ref": "data.view.tax.enabled"
+              }
+            ]
+          }
+        },
+        {
+          "id": "sp-quota",
+          "type": "spacer"
+        },
+        {
+          "id": "quota",
+          "type": "info",
+          "items": [
+            "区块 {{data.view.quota.chunks.used}} / {{data.view.quota.chunks.limit}}",
+            "成员 {{data.view.quota.members.used}} / {{data.view.quota.members.limit}}",
+            "子区域 {{data.view.quota.areas.used}} / {{data.view.quota.areas.limit}}",
+            "自定义角色 {{data.view.quota.roles.used}} / {{data.view.quota.roles.limit}}"
+          ]
+        },
+        {
+          "id": "sp-d-bank",
+          "type": "spacer"
+        },
+        {
+          "id": "d-bank",
+          "type": "divider"
+        },
+        {
+          "id": "sp-amount",
+          "type": "spacer"
+        },
+        {
+          "id": "amount",
+          "type": "textField",
+          "label": "金额",
+          "bind": "state.amount"
+        },
+        {
+          "id": "sp-deposit",
+          "type": "spacer",
+          "visibleWhen": {
+            "ref": "data.view.caps.deposit"
+          }
+        },
+        {
+          "id": "deposit",
+          "type": "button",
+          "label": "存入银行",
+          "tone": "primary",
+          "visibleWhen": {
+            "ref": "data.view.caps.deposit"
+          },
+          "trigger": {
+            "type": "action",
+            "action": "deposit"
+          }
+        },
+        {
+          "id": "sp-withdraw",
+          "type": "spacer",
+          "visibleWhen": {
+            "ref": "data.view.caps.withdraw"
+          }
+        },
+        {
+          "id": "withdraw",
+          "type": "button",
+          "label": "从银行取出",
+          "visibleWhen": {
+            "ref": "data.view.caps.withdraw"
+          },
+          "trigger": {
+            "type": "action",
+            "action": "withdraw"
+          }
+        },
+        {
+          "id": "economy",
+          "type": "when",
+          "condition": {
+            "ref": "data.view.caps.economy"
+          },
+          "content": [
+            {
+              "id": "sp-upgrade",
+              "type": "spacer",
+              "visibleWhen": {
+                "op": "not",
+                "args": [
+                  {
+                    "ref": "data.view.maxLevel"
+                  }
+                ]
+              }
+            },
+            {
+              "id": "upgrade",
+              "type": "button",
+              "label": "升级领地",
+              "visibleWhen": {
+                "op": "not",
+                "args": [
+                  {
+                    "ref": "data.view.maxLevel"
+                  }
+                ]
+              },
+              "trigger": {
+                "type": "action",
+                "action": "upgrade"
+              }
+            },
+            {
+              "id": "sp-upkeep-pay",
+              "type": "spacer"
+            },
+            {
+              "id": "upkeep-pay",
+              "type": "button",
+              "label": "立即缴纳维护费",
+              "trigger": {
+                "type": "action",
+                "action": "upkeepPay"
+              }
+            },
+            {
+              "id": "sp-d-tax",
+              "type": "spacer"
+            },
+            {
+              "id": "d-tax",
+              "type": "divider"
+            },
+            {
+              "id": "sp-tax-title",
+              "type": "spacer"
+            },
+            {
+              "id": "tax-title",
+              "type": "header",
+              "text": "成员税"
+            },
+            {
+              "id": "sp-tax-amount",
+              "type": "spacer"
+            },
+            {
+              "id": "tax-amount",
+              "type": "textField",
+              "label": "每期税额（0 表示关闭）",
+              "bind": "state.taxAmount"
+            },
+            {
+              "id": "sp-tax-hours",
+              "type": "spacer"
+            },
+            {
+              "id": "tax-hours",
+              "type": "textField",
+              "label": "周期（小时）",
+              "bind": "state.taxHours"
+            },
+            {
+              "id": "sp-tax-set",
+              "type": "spacer"
+            },
+            {
+              "id": "tax-set",
+              "type": "button",
+              "label": "保存税费设置",
+              "trigger": {
+                "type": "action",
+                "action": "taxSet"
+              }
+            },
+            {
+              "id": "sp-d-sale",
+              "type": "spacer"
+            },
+            {
+              "id": "d-sale",
+              "type": "divider"
+            },
+            {
+              "id": "sp-sale-title",
+              "type": "spacer"
+            },
+            {
+              "id": "sale-title",
+              "type": "header",
+              "text": "整块出售"
+            },
+            {
+              "id": "sp-on-sale",
+              "type": "spacer",
+              "visibleWhen": {
+                "ref": "data.view.onSale"
+              }
+            },
+            {
+              "id": "on-sale",
+              "type": "text",
+              "text": "出售中：{{data.view.salePrice}}",
+              "visibleWhen": {
+                "ref": "data.view.onSale"
+              }
+            },
+            {
+              "id": "sp-sale-price",
+              "type": "spacer"
+            },
+            {
+              "id": "sale-price",
+              "type": "textField",
+              "label": "售价",
+              "bind": "state.salePrice"
+            },
+            {
+              "id": "sp-sell",
+              "type": "spacer"
+            },
+            {
+              "id": "sell",
+              "type": "button",
+              "label": "挂牌出售整块领地",
+              "tone": "danger",
+              "trigger": {
+                "type": "action",
+                "action": "sell"
+              }
+            },
+            {
+              "id": "sp-unsell",
+              "type": "spacer",
+              "visibleWhen": {
+                "ref": "data.view.onSale"
+              }
+            },
+            {
+              "id": "unsell",
+              "type": "button",
+              "label": "取消出售",
+              "visibleWhen": {
+                "ref": "data.view.onSale"
+              },
+              "trigger": {
+                "type": "action",
+                "action": "unsell"
+              }
+            }
+          ]
+        },
+        {
+          "id": "sp-d-end",
+          "type": "spacer"
+        },
+        {
+          "id": "d-end",
+          "type": "divider"
+        },
+        {
+          "id": "sp-tx",
+          "type": "spacer"
+        },
+        {
+          "id": "tx",
+          "type": "button",
+          "label": "查看未完成交易",
+          "trigger": {
+            "type": "action",
+            "action": "tx"
+          }
+        },
+        {
+          "id": "sp-back",
+          "type": "spacer"
+        },
+        {
+          "id": "back",
+          "type": "button",
+          "label": "返回",
+          "trigger": {
+            "type": "back"
+          }
+        }
+      ]
+    },
+    {
+      "id": "missing",
+      "type": "when",
+      "condition": {
+        "op": "not",
+        "args": [
+          {
+            "ref": "data.view"
+          }
+        ]
+      },
+      "content": [
+        {
+          "id": "sp-missing-tip",
+          "type": "spacer"
+        },
+        {
+          "id": "missing-tip",
+          "type": "info",
+          "items": [
+            "读取失败：领地可能已被删除或改名，也可能数据仍在加载。"
+          ],
+          "tone": "warning"
+        },
+        {
+          "id": "sp-missing-back",
+          "type": "spacer"
+        },
+        {
+          "id": "missing-back",
+          "type": "button",
+          "label": "返回",
+          "trigger": {
+            "type": "back"
+          }
+        }
+      ]
+    }
+  ],
+  "actions": {
+    "deposit": {
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "deposit",
+          "args": [
+            "{{data.view.land.name}}",
+            "{{state.amount}}"
+          ]
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "refresh"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    },
+    "withdraw": {
+      "confirm": {
+        "title": "取款",
+        "body": "从「{{data.view.land.name}}」的银行取出 {{state.amount}}？",
+        "confirmText": "取出"
+      },
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "withdraw",
+          "args": [
+            "{{data.view.land.name}}",
+            "{{state.amount}}",
+            "confirm"
+          ]
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "refresh"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    },
+    "upgrade": {
+      "confirm": {
+        "title": "升级领地",
+        "body": "从银行支付 {{data.view.nextCost}}，升到 L{{data.view.nextLevel}}？",
+        "confirmText": "升级"
+      },
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "upgrade",
+          "args": [
+            "{{data.view.land.name}}",
+            "confirm"
+          ]
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "refresh"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    },
+    "upkeepPay": {
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "upkeep_pay",
+          "args": [
+            "{{data.view.land.name}}"
+          ]
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "refresh"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    },
+    "taxSet": {
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "tax_set",
+          "args": [
+            "{{data.view.land.name}}",
+            "{{state.taxAmount}}",
+            "{{state.taxHours}}"
+          ]
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "refresh"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    },
+    "sell": {
+      "confirm": {
+        "title": "出售领地",
+        "body": "以 {{state.salePrice}} 挂牌出售整块「{{data.view.land.name}}」？成交后领地归买家所有。请输入领地名确认。",
+        "confirmText": "挂牌",
+        "danger": true,
+        "challenge": "{{data.view.land.name}}"
+      },
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "sell_land",
+          "args": [
+            "{{data.view.land.name}}",
+            "{{state.salePrice}}"
+          ]
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "refresh"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    },
+    "unsell": {
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "unsell",
+          "args": [
+            "{{data.view.land.name}}"
+          ]
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "refresh"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    },
+    "tx": {
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "tx",
+          "args": [
+            "{{data.view.land.name}}"
+          ]
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    }
+  }
+}

@@ -52,8 +52,17 @@ function groupValue(
 }
 
 /**
+ * 配额上限是否表示“不限”：等级规则（levels）中的容量配置为负数（约定写 -1），或已换算成 Infinity。
+ * 使用场景：builtinQuota 把不限的配额上限换成 Infinity；展示层据此显示“不限”。
+ */
+export function isUnlimited(limit: number): boolean {
+  return limit < 0 || limit === Number.POSITIVE_INFINITY;
+}
+
+/**
  * 计算某个领地或玩家的内置配额。
  * 等级规则决定领地容量；权限组只提高上限，不会把已经占领的区块删掉。
+ * 配置为负数的项不限：limit 为 Infinity，ok 恒为 true（比较运算无需特判）。
  */
 export function builtinQuota(
   config: LandConfig,
@@ -75,7 +84,8 @@ export function builtinQuota(
             ? level.areas
             : level.roles;
   const raised = groupValue(config.quotaGroups, id, holds);
-  const limit = raised === undefined ? base : Math.max(base, raised);
+  const capped = raised === undefined ? base : Math.max(base, raised);
+  const limit = isUnlimited(base) || (raised !== undefined && isUnlimited(raised)) ? Number.POSITIVE_INFINITY : capped;
   const used = usageOf(index, actor.id, land, id);
   return { id, used, limit, ok: used < limit };
 }

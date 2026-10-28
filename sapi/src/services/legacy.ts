@@ -35,6 +35,31 @@ export function legacyIdentities(): Array<{ playerId: string; playerName: string
   return [...seen.values()];
 }
 
+/** 待绑定旧服身份的一行概览：身份与其名下领地数。 */
+export interface LegacyRow {
+  playerId: string;
+  playerName: string;
+  lands: number;
+}
+
+/**
+ * 按名字或 XUID 片段（不区分大小写）过滤待绑定身份，返回总数和前 limit 行。
+ * 使用场景：admin_legacy 命令逐行输出；领地界面的管理员页列出待绑定身份。
+ */
+export function legacyOverview(filter = "", limit = 20): { total: number; rows: LegacyRow[] } {
+  const needle = filter.toLowerCase();
+  const matched = legacyIdentities().filter(
+    (item) => !needle || item.playerId.toLowerCase().includes(needle) || item.playerName.toLowerCase().includes(needle),
+  );
+  const lands = [...world().lands.values()];
+  const rows = matched.slice(0, limit).map((item) => ({
+    playerId: item.playerId,
+    playerName: item.playerName,
+    lands: lands.filter((land) => land.ownerId === item.playerId).length,
+  }));
+  return { total: matched.length, rows };
+}
+
 /**
  * 玩家进入时尝试自动绑定。只有名字唯一匹配一个占位身份时才执行，避免同名旧账号被错误合并。
  * 使用场景：playerSpawn（initialSpawn）回调。返回受影响的领地数量，0 表示没有可绑定的占位。

@@ -1,6 +1,6 @@
 /**
  * @sfmc-bds/module-land — 区块领地、三维子区域、成员角色与领地银行。
- * 玩家只通过 /c:land 操作。其他模块通过 land.* 服务读取或注册扩展。
+ * 玩家通过 /c:land 子命令或界面（/c:land 不带子命令）操作。其他模块通过 land.* 服务读取或注册扩展。
  */
 
 import { world } from "@minecraft/server";
@@ -23,6 +23,8 @@ import { bindShared, rememberPlayer, replaceConfig } from "./services/shared.js"
 import { hydrate } from "./store/hydrate.js";
 import { listRegistry } from "./store/repo.js";
 import { defineLandTables } from "./store/tables.js";
+import { openLandUi, registerLandUi } from "./ui-feature.js";
+import { provideLandUi } from "./ui-services.js";
 
 const MODULE_ID = "land";
 const index = new WorldIndex();
@@ -40,14 +42,19 @@ Command.register(
   "land",
   "land.use",
   (player, action, a, b, c, d, e, f) => {
+    // 玩家不带子命令时打开领地界面；控制台仍按原逻辑输出帮助
+    if (action === undefined && player) {
+      openLandUi(player);
+      return;
+    }
     void runLandCommand(player, action, a, b, c, d, e, f);
   },
-  "领地：占领、成员、银行和保护",
+  "领地：占领、成员、银行和保护（不带子命令打开界面）",
   MODULE_ID,
   undefined,
   {
     parameters: [
-      { name: "action", type: "enum", values: [...LAND_ACTIONS] },
+      { name: "action", type: "enum", values: [...LAND_ACTIONS], optional: true },
       { name: "a", type: "string", optional: true },
       { name: "b", type: "string", optional: true },
       { name: "c", type: "string", optional: true },
@@ -107,6 +114,8 @@ ModuleRegistry.register({
         }
       }
       cleanups.push(...provideLandApi());
+      cleanups.push(...provideLandUi());
+      cleanups.push(registerLandUi());
       cleanups.push(startLoops());
       debug.i("Land", `ready lands=${index.lands.size} claims=${index.claims.size}`);
     },

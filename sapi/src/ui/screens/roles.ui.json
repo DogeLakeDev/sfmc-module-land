@@ -1,0 +1,251 @@
+{
+  "$schema": "https://cdn.jsdelivr.net/gh/DogeLakeDev/ScriptsForMinecraftServer@main/modules/sdk/@sfmc-sdk/schemas/ui-screen.v1.schema.json",
+  "formatVersion": 1,
+  "id": "land.roles",
+  "name": "land.roles",
+  "presentation": "form",
+  "title": "角色",
+  "params": {
+    "landId": {
+      "type": "string",
+      "required": true
+    }
+  },
+  "state": {
+    "name": {
+      "type": "string",
+      "default": "",
+      "maxLength": 32
+    },
+    "description": {
+      "type": "string",
+      "default": "",
+      "maxLength": 200
+    }
+  },
+  "load": {
+    "view": {
+      "service": "land.ui.roles",
+      "input": {
+        "playerId": "{{player.id}}",
+        "landId": "{{params.landId}}"
+      }
+    }
+  },
+  "body": [
+    {
+      "id": "ready",
+      "type": "when",
+      "condition": {
+        "ref": "data.view"
+      },
+      "content": [
+        {
+          "id": "sp-title",
+          "type": "spacer"
+        },
+        {
+          "id": "title",
+          "type": "header",
+          "text": "{{data.view.land.name}} · 角色"
+        },
+        {
+          "id": "sp-tip",
+          "type": "spacer"
+        },
+        {
+          "id": "tip",
+          "type": "info",
+          "items": [
+            "点击角色查看或修改权限。预置角色可以改权限，但不能删除。"
+          ],
+          "tone": "muted"
+        },
+        {
+          "id": "roles",
+          "type": "each",
+          "source": "data.view.roles",
+          "as": "role",
+          "template": [
+            {
+              "id": "sp-role-open",
+              "type": "spacer"
+            },
+            {
+              "id": "role-open",
+              "type": "button",
+              "label": "{{role.name}}",
+              "description": "{{role.permCount}} 项权限 · {{role.userCount}} 名成员",
+              "trigger": {
+                "type": "navigate",
+                "to": "land.role",
+                "params": {
+                  "landId": "{{params.landId}}",
+                  "roleId": "{{role.id}}"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "id": "create-block",
+          "type": "when",
+          "condition": {
+            "ref": "data.view.caps.roles"
+          },
+          "content": [
+            {
+              "id": "sp-d-create",
+              "type": "spacer"
+            },
+            {
+              "id": "d-create",
+              "type": "divider"
+            },
+            {
+              "id": "sp-create-title",
+              "type": "spacer"
+            },
+            {
+              "id": "create-title",
+              "type": "header",
+              "text": "新建角色"
+            },
+            {
+              "id": "sp-name",
+              "type": "spacer"
+            },
+            {
+              "id": "name",
+              "type": "textField",
+              "label": "角色名",
+              "bind": "state.name"
+            },
+            {
+              "id": "sp-description",
+              "type": "spacer"
+            },
+            {
+              "id": "description",
+              "type": "textField",
+              "label": "说明（可选）",
+              "bind": "state.description"
+            },
+            {
+              "id": "sp-create",
+              "type": "spacer"
+            },
+            {
+              "id": "create",
+              "type": "button",
+              "label": "创建角色",
+              "tone": "primary",
+              "trigger": {
+                "type": "action",
+                "action": "create"
+              }
+            }
+          ]
+        },
+        {
+          "id": "sp-d-end",
+          "type": "spacer"
+        },
+        {
+          "id": "d-end",
+          "type": "divider"
+        },
+        {
+          "id": "sp-back",
+          "type": "spacer"
+        },
+        {
+          "id": "back",
+          "type": "button",
+          "label": "返回",
+          "trigger": {
+            "type": "back"
+          }
+        }
+      ]
+    },
+    {
+      "id": "missing",
+      "type": "when",
+      "condition": {
+        "op": "not",
+        "args": [
+          {
+            "ref": "data.view"
+          }
+        ]
+      },
+      "content": [
+        {
+          "id": "sp-missing-tip",
+          "type": "spacer"
+        },
+        {
+          "id": "missing-tip",
+          "type": "info",
+          "items": [
+            "读取失败：领地可能已被删除或改名，也可能数据仍在加载。"
+          ],
+          "tone": "warning"
+        },
+        {
+          "id": "sp-missing-back",
+          "type": "spacer"
+        },
+        {
+          "id": "missing-back",
+          "type": "button",
+          "label": "返回",
+          "trigger": {
+            "type": "back"
+          }
+        }
+      ]
+    }
+  ],
+  "actions": {
+    "create": {
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "role_create",
+          "args": [
+            "{{data.view.land.name}}",
+            "{{state.name}}",
+            "{{state.description}}"
+          ]
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "setState",
+          "values": {
+            "name": "",
+            "description": ""
+          }
+        },
+        {
+          "effect": "refresh"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    }
+  }
+}

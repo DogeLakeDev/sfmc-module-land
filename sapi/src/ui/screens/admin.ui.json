@@ -1,0 +1,558 @@
+{
+  "$schema": "https://cdn.jsdelivr.net/gh/DogeLakeDev/ScriptsForMinecraftServer@main/modules/sdk/@sfmc-sdk/schemas/ui-screen.v1.schema.json",
+  "formatVersion": 1,
+  "id": "land.admin",
+  "name": "land.admin",
+  "presentation": "form",
+  "title": "领地管理员",
+  "state": {
+    "filter": {
+      "type": "string",
+      "default": ""
+    },
+    "landToken": {
+      "type": "string",
+      "default": ""
+    },
+    "legacyId": {
+      "type": "string",
+      "default": ""
+    },
+    "bindTarget": {
+      "type": "string",
+      "default": ""
+    }
+  },
+  "load": {
+    "view": {
+      "service": "land.ui.admin",
+      "input": {
+        "playerId": "{{player.id}}",
+        "filter": "{{state.filter}}"
+      }
+    }
+  },
+  "body": [
+    {
+      "id": "ready",
+      "type": "when",
+      "condition": {
+        "ref": "data.view"
+      },
+      "content": [
+        {
+          "id": "sp-bypass-on",
+          "type": "spacer",
+          "visibleWhen": {
+            "ref": "data.view.bypass"
+          }
+        },
+        {
+          "id": "bypass-on",
+          "type": "text",
+          "text": "管理员绕过：已开启（仅本次会话）",
+          "tone": "warning",
+          "visibleWhen": {
+            "ref": "data.view.bypass"
+          }
+        },
+        {
+          "id": "sp-bypass-off",
+          "type": "spacer",
+          "visibleWhen": {
+            "op": "not",
+            "args": [
+              {
+                "ref": "data.view.bypass"
+              }
+            ]
+          }
+        },
+        {
+          "id": "bypass-off",
+          "type": "text",
+          "text": "管理员绕过：已关闭",
+          "tone": "muted",
+          "visibleWhen": {
+            "op": "not",
+            "args": [
+              {
+                "ref": "data.view.bypass"
+              }
+            ]
+          }
+        },
+        {
+          "id": "sp-bypass-enable",
+          "type": "spacer",
+          "visibleWhen": {
+            "op": "not",
+            "args": [
+              {
+                "ref": "data.view.bypass"
+              }
+            ]
+          }
+        },
+        {
+          "id": "bypass-enable",
+          "type": "button",
+          "label": "开启绕过",
+          "visibleWhen": {
+            "op": "not",
+            "args": [
+              {
+                "ref": "data.view.bypass"
+              }
+            ]
+          },
+          "trigger": {
+            "type": "action",
+            "action": "bypass",
+            "input": {
+              "args": [
+                "on"
+              ]
+            }
+          }
+        },
+        {
+          "id": "sp-bypass-disable",
+          "type": "spacer",
+          "visibleWhen": {
+            "ref": "data.view.bypass"
+          }
+        },
+        {
+          "id": "bypass-disable",
+          "type": "button",
+          "label": "关闭绕过",
+          "visibleWhen": {
+            "ref": "data.view.bypass"
+          },
+          "trigger": {
+            "type": "action",
+            "action": "bypass",
+            "input": {
+              "args": [
+                "off"
+              ]
+            }
+          }
+        },
+        {
+          "id": "sp-d-diag",
+          "type": "spacer"
+        },
+        {
+          "id": "d-diag",
+          "type": "divider"
+        },
+        {
+          "id": "sp-diag-title",
+          "type": "spacer"
+        },
+        {
+          "id": "diag-title",
+          "type": "header",
+          "text": "诊断与修复"
+        },
+        {
+          "id": "sp-land-token",
+          "type": "spacer"
+        },
+        {
+          "id": "land-token",
+          "type": "textField",
+          "label": "领地名（留空表示全服）",
+          "bind": "state.landToken"
+        },
+        {
+          "id": "sp-diag",
+          "type": "spacer"
+        },
+        {
+          "id": "diag",
+          "type": "button",
+          "label": "一致性诊断",
+          "trigger": {
+            "type": "action",
+            "action": "diag"
+          }
+        },
+        {
+          "id": "sp-repair",
+          "type": "spacer"
+        },
+        {
+          "id": "repair",
+          "type": "button",
+          "label": "自动修复",
+          "tone": "danger",
+          "trigger": {
+            "type": "action",
+            "action": "repair"
+          }
+        },
+        {
+          "id": "sp-tx",
+          "type": "spacer"
+        },
+        {
+          "id": "tx",
+          "type": "button",
+          "label": "未完成交易",
+          "trigger": {
+            "type": "action",
+            "action": "tx"
+          }
+        },
+        {
+          "id": "sp-d-legacy",
+          "type": "spacer"
+        },
+        {
+          "id": "d-legacy",
+          "type": "divider"
+        },
+        {
+          "id": "sp-legacy-title",
+          "type": "spacer"
+        },
+        {
+          "id": "legacy-title",
+          "type": "header",
+          "text": "旧服身份（共 {{data.view.legacyTotal}} 个待绑定）"
+        },
+        {
+          "id": "sp-filter",
+          "type": "spacer"
+        },
+        {
+          "id": "filter",
+          "type": "textField",
+          "label": "按名字或 XUID 筛选",
+          "bind": "state.filter"
+        },
+        {
+          "id": "sp-filter-apply",
+          "type": "spacer"
+        },
+        {
+          "id": "filter-apply",
+          "type": "button",
+          "label": "筛选",
+          "trigger": {
+            "type": "refresh"
+          }
+        },
+        {
+          "id": "legacy",
+          "type": "each",
+          "source": "data.view.legacy",
+          "as": "row",
+          "template": [
+            {
+              "id": "sp-legacy-line",
+              "type": "spacer"
+            },
+            {
+              "id": "legacy-line",
+              "type": "text",
+              "text": "{{row.playerName}}（{{row.playerId}}）名下 {{row.lands}} 块领地"
+            }
+          ],
+          "empty": [
+            {
+              "id": "sp-legacy-empty",
+              "type": "spacer"
+            },
+            {
+              "id": "legacy-empty",
+              "type": "info",
+              "items": [
+                "没有待绑定的旧服身份。"
+              ],
+              "tone": "muted"
+            }
+          ]
+        },
+        {
+          "id": "bind",
+          "type": "when",
+          "condition": {
+            "op": "greaterThan",
+            "args": [
+              {
+                "ref": "data.view.legacyCount"
+              },
+              {
+                "value": 0
+              }
+            ]
+          },
+          "content": [
+            {
+              "id": "sp-legacy-id",
+              "type": "spacer"
+            },
+            {
+              "id": "legacy-id",
+              "type": "dropdown",
+              "label": "旧服身份",
+              "bind": "state.legacyId",
+              "options": {
+                "source": "data.view.legacy",
+                "as": "opt",
+                "value": "{{opt.playerId}}",
+                "label": "{{opt.playerName}}（{{opt.playerId}}）"
+              }
+            },
+            {
+              "id": "sp-bind-target",
+              "type": "spacer"
+            },
+            {
+              "id": "bind-target",
+              "type": "textField",
+              "label": "绑定到新服玩家（玩家名）",
+              "bind": "state.bindTarget"
+            },
+            {
+              "id": "sp-bind-apply",
+              "type": "spacer"
+            },
+            {
+              "id": "bind-apply",
+              "type": "button",
+              "label": "绑定",
+              "tone": "danger",
+              "trigger": {
+                "type": "action",
+                "action": "bind"
+              }
+            }
+          ]
+        },
+        {
+          "id": "sp-d-end",
+          "type": "spacer"
+        },
+        {
+          "id": "d-end",
+          "type": "divider"
+        },
+        {
+          "id": "sp-back",
+          "type": "spacer"
+        },
+        {
+          "id": "back",
+          "type": "button",
+          "label": "返回",
+          "trigger": {
+            "type": "back"
+          }
+        }
+      ]
+    },
+    {
+      "id": "missing",
+      "type": "when",
+      "condition": {
+        "op": "not",
+        "args": [
+          {
+            "ref": "data.view"
+          }
+        ]
+      },
+      "content": [
+        {
+          "id": "sp-missing-tip",
+          "type": "spacer"
+        },
+        {
+          "id": "missing-tip",
+          "type": "info",
+          "items": [
+            "读取失败：领地可能已被删除或改名，也可能数据仍在加载。"
+          ],
+          "tone": "warning"
+        },
+        {
+          "id": "sp-missing-back",
+          "type": "spacer"
+        },
+        {
+          "id": "missing-back",
+          "type": "button",
+          "label": "返回",
+          "trigger": {
+            "type": "back"
+          }
+        }
+      ]
+    }
+  ],
+  "actions": {
+    "bypass": {
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "admin_bypass",
+          "args": []
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "refresh"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    },
+    "diag": {
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "admin_diag",
+          "args": [
+            "{{state.landToken}}"
+          ]
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    },
+    "repair": {
+      "confirm": {
+        "title": "自动修复",
+        "body": "清理孤立区块、补齐默认区域、结算到期租约并续跑卡住的交易？范围：{{state.landToken}}（留空为全服）。",
+        "confirmText": "修复",
+        "danger": true
+      },
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "admin_repair",
+          "args": [
+            "{{state.landToken}}",
+            "confirm"
+          ]
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "refresh"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    },
+    "tx": {
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "admin_tx",
+          "args": [
+            "{{state.landToken}}"
+          ]
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    },
+    "bind": {
+      "confirm": {
+        "title": "绑定旧服身份",
+        "body": "把所选旧服身份的领地、成员和区域授权全部转到 {{state.bindTarget}} 名下？",
+        "confirmText": "绑定",
+        "danger": true
+      },
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "admin_legacy_bind",
+          "args": [
+            "{{state.legacyId}}",
+            "{{state.bindTarget}}",
+            "confirm"
+          ]
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "setState",
+          "values": {
+            "bindTarget": ""
+          }
+        },
+        {
+          "effect": "refresh"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    }
+  }
+}

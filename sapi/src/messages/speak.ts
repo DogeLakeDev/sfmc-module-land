@@ -43,16 +43,52 @@ export function phrase(player: Player | undefined, key: string, vars: MessageVar
   return renderMessage(locale, key, vars, currentMessages());
 }
 
+/** say 的提示色调，与 Msg 的方法名一致。 */
+export type SayTone = "info" | "success" | "error" | "warning" | "tips";
+
+/** 一条被捕获的提示。 */
+export interface CapturedLine {
+  text: string;
+  tone: SayTone;
+}
+
+/**
+ * 正在被捕获的玩家提示缓冲，键为玩家 ID。
+ * 使用场景：land.ui.exec 执行命令期间，把 say 的输出收进缓冲作为表单状态行，而不是同时刷到聊天栏。
+ */
+const captures = new Map<string, CapturedLine[]>();
+
+/**
+ * 在 run 执行期间捕获发给该玩家的全部 say 输出，结束（含抛错）后恢复直发。
+ * 同一玩家已在捕获中时复用外层缓冲，内层返回空数组。
+ * 使用场景：land.ui.exec 把命令的原有提示文本带回界面。
+ */
+export async function captureSays<T>(playerId: string, run: () => Promise<T>): Promise<{ value: T; lines: CapturedLine[] }> {
+  if (captures.has(playerId)) return { value: await run(), lines: [] };
+  const lines: CapturedLine[] = [];
+  captures.set(playerId, lines);
+  try {
+    return { value: await run(), lines };
+  } finally {
+    captures.delete(playerId);
+  }
+}
+
 /** 渲染给玩家或控制台。 */
 export function say(
   player: Player | undefined,
   key: string,
   vars: MessageVars = {},
-  tone: "info" | "success" | "error" | "warning" | "tips" = "info",
+  tone: SayTone = "info",
 ): string {
   const text = phrase(player, key, vars);
   if (!player) {
     debug.i("Land", text);
+    return text;
+  }
+  const buffer = captures.get(player.id);
+  if (buffer) {
+    buffer.push({ text, tone });
     return text;
   }
   Msg[tone](text, player);

@@ -1,0 +1,363 @@
+{
+  "$schema": "https://cdn.jsdelivr.net/gh/DogeLakeDev/ScriptsForMinecraftServer@main/modules/sdk/@sfmc-sdk/schemas/ui-screen.v1.schema.json",
+  "formatVersion": 1,
+  "id": "land.flags",
+  "name": "land.flags",
+  "presentation": "form",
+  "title": "旗标",
+  "params": {
+    "landId": {
+      "type": "string",
+      "required": true
+    },
+    "areaId": {
+      "type": "string",
+      "default": ""
+    }
+  },
+  "state": {
+    "flagId": {
+      "type": "string",
+      "default": ""
+    },
+    "flagValue": {
+      "type": "string",
+      "default": ""
+    }
+  },
+  "load": {
+    "view": {
+      "service": "land.ui.flags",
+      "input": {
+        "playerId": "{{player.id}}",
+        "landId": "{{params.landId}}",
+        "areaId": "{{params.areaId}}"
+      }
+    }
+  },
+  "body": [
+    {
+      "id": "ready",
+      "type": "when",
+      "condition": {
+        "ref": "data.view"
+      },
+      "content": [
+        {
+          "id": "sp-title",
+          "type": "spacer"
+        },
+        {
+          "id": "title",
+          "type": "header",
+          "text": "{{data.view.land.name}} · 旗标"
+        },
+        {
+          "id": "sp-scope-area",
+          "type": "spacer",
+          "visibleWhen": {
+            "ref": "data.view.area"
+          }
+        },
+        {
+          "id": "scope-area",
+          "type": "text",
+          "text": "子区域：{{data.view.area.name}}（未单独设置的项沿用领地设置）",
+          "visibleWhen": {
+            "ref": "data.view.area"
+          }
+        },
+        {
+          "id": "sp-scope-land",
+          "type": "spacer",
+          "visibleWhen": {
+            "op": "not",
+            "args": [
+              {
+                "ref": "data.view.area"
+              }
+            ]
+          }
+        },
+        {
+          "id": "scope-land",
+          "type": "text",
+          "text": "领地级旗标，对没有单独设置的子区域同样生效。",
+          "tone": "muted",
+          "visibleWhen": {
+            "op": "not",
+            "args": [
+              {
+                "ref": "data.view.area"
+              }
+            ]
+          }
+        },
+        {
+          "id": "edit",
+          "type": "when",
+          "condition": {
+            "ref": "data.view.caps.flags"
+          },
+          "content": [
+            {
+              "id": "toggles",
+              "type": "each",
+              "source": "data.view.toggles",
+              "as": "item",
+              "template": [
+                {
+                  "id": "sp-flag-toggle",
+                  "type": "spacer"
+                },
+                {
+                  "id": "flag-toggle",
+                  "type": "toggle",
+                  "label": "{{item.description}}",
+                  "bind": "item.value",
+                  "tooltip": "{{item.id}}",
+                  "trigger": {
+                    "type": "action",
+                    "action": "setFlag",
+                    "input": {
+                      "command": "{{data.view.command}}",
+                      "args": [
+                        "{{data.view.land.name}}",
+                        "{{data.view.area.name}}",
+                        "{{item.id}}",
+                        "{{item.value}}"
+                      ]
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "id": "inputs",
+              "type": "when",
+              "condition": {
+                "op": "greaterThan",
+                "args": [
+                  {
+                    "ref": "data.view.inputCount"
+                  },
+                  {
+                    "value": 0
+                  }
+                ]
+              },
+              "content": [
+                {
+                  "id": "sp-d-inputs",
+                  "type": "spacer"
+                },
+                {
+                  "id": "d-inputs",
+                  "type": "divider"
+                },
+                {
+                  "id": "sp-input-title",
+                  "type": "spacer"
+                },
+                {
+                  "id": "input-title",
+                  "type": "header",
+                  "text": "文本与数值旗标"
+                },
+                {
+                  "id": "input-list",
+                  "type": "each",
+                  "source": "data.view.inputs",
+                  "as": "row",
+                  "template": [
+                    {
+                      "id": "sp-input-line",
+                      "type": "spacer"
+                    },
+                    {
+                      "id": "input-line",
+                      "type": "text",
+                      "text": "{{row.id}}：{{row.value}}",
+                      "tone": "muted",
+                      "tooltip": "{{row.description}}"
+                    }
+                  ]
+                },
+                {
+                  "id": "sp-flag",
+                  "type": "spacer"
+                },
+                {
+                  "id": "flag",
+                  "type": "dropdown",
+                  "label": "旗标",
+                  "bind": "state.flagId",
+                  "options": {
+                    "source": "data.view.inputs",
+                    "as": "opt",
+                    "value": "{{opt.id}}",
+                    "label": "{{opt.id}}"
+                  }
+                },
+                {
+                  "id": "sp-flag-value",
+                  "type": "spacer"
+                },
+                {
+                  "id": "flag-value",
+                  "type": "textField",
+                  "label": "新值",
+                  "bind": "state.flagValue"
+                },
+                {
+                  "id": "sp-set",
+                  "type": "spacer"
+                },
+                {
+                  "id": "set",
+                  "type": "button",
+                  "label": "写入",
+                  "tone": "primary",
+                  "trigger": {
+                    "type": "action",
+                    "action": "setFlag",
+                    "input": {
+                      "command": "{{data.view.command}}",
+                      "args": [
+                        "{{data.view.land.name}}",
+                        "{{data.view.area.name}}",
+                        "{{state.flagId}}",
+                        "{{state.flagValue}}"
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "view",
+          "type": "when",
+          "condition": {
+            "op": "not",
+            "args": [
+              {
+                "ref": "data.view.caps.flags"
+              }
+            ]
+          },
+          "content": [
+            {
+              "id": "readonly",
+              "type": "each",
+              "source": "data.view.toggles",
+              "as": "ro",
+              "template": [
+                {
+                  "id": "sp-ro-line",
+                  "type": "spacer"
+                },
+                {
+                  "id": "ro-line",
+                  "type": "text",
+                  "text": "{{ro.description}}：{{ro.value}}"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "sp-d-end",
+          "type": "spacer"
+        },
+        {
+          "id": "d-end",
+          "type": "divider"
+        },
+        {
+          "id": "sp-back",
+          "type": "spacer"
+        },
+        {
+          "id": "back",
+          "type": "button",
+          "label": "返回",
+          "trigger": {
+            "type": "back"
+          }
+        }
+      ]
+    },
+    {
+      "id": "missing",
+      "type": "when",
+      "condition": {
+        "op": "not",
+        "args": [
+          {
+            "ref": "data.view"
+          }
+        ]
+      },
+      "content": [
+        {
+          "id": "sp-missing-tip",
+          "type": "spacer"
+        },
+        {
+          "id": "missing-tip",
+          "type": "info",
+          "items": [
+            "读取失败：领地可能已被删除或改名，也可能数据仍在加载。"
+          ],
+          "tone": "warning"
+        },
+        {
+          "id": "sp-missing-back",
+          "type": "spacer"
+        },
+        {
+          "id": "missing-back",
+          "type": "button",
+          "label": "返回",
+          "trigger": {
+            "type": "back"
+          }
+        }
+      ]
+    }
+  ],
+  "actions": {
+    "setFlag": {
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "flag",
+          "args": []
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "refresh"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        },
+        {
+          "effect": "refresh"
+        }
+      ]
+    }
+  }
+}

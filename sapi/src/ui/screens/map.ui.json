@@ -1,0 +1,107 @@
+{
+  "$schema": "https://cdn.jsdelivr.net/gh/DogeLakeDev/ScriptsForMinecraftServer@main/modules/sdk/@sfmc-sdk/schemas/ui-screen.v1.schema.json",
+  "formatVersion": 1,
+  "id": "land.map",
+  "name": "land.map",
+  "presentation": "form",
+  "title": "附近地图",
+  "load": {
+    "view": {
+      "service": "land.ui.map",
+      "input": {
+        "playerId": "{{player.id}}"
+      }
+    }
+  },
+  "body": [
+    {
+      "id": "ready",
+      "type": "when",
+      "condition": {
+        "ref": "data.view"
+      },
+      "content": [
+        {
+          "id": "sp-legend",
+          "type": "spacer"
+        },
+        {
+          "id": "legend",
+          "type": "text",
+          "text": "§e■§r 你的位置  §a■§r 脚下领地  §c■§r 其他领地  §7■§r 荒野"
+        },
+        {
+          "id": "sp-grid",
+          "type": "spacer"
+        },
+        {
+          "id": "grid",
+          "type": "text",
+          "text": "{{data.view.text}}"
+        },
+        {
+          "id": "sp-refresh",
+          "type": "spacer"
+        },
+        {
+          "id": "refresh",
+          "type": "button",
+          "label": "刷新",
+          "trigger": {
+            "type": "refresh"
+          }
+        },
+        {
+          "id": "sp-back",
+          "type": "spacer"
+        },
+        {
+          "id": "back",
+          "type": "button",
+          "label": "返回",
+          "trigger": {
+            "type": "back"
+          }
+        }
+      ]
+    },
+    {
+      "id": "missing",
+      "type": "when",
+      "condition": {
+        "op": "not",
+        "args": [
+          {
+            "ref": "data.view"
+          }
+        ]
+      },
+      "content": [
+        {
+          "id": "sp-missing-tip",
+          "type": "spacer"
+        },
+        {
+          "id": "missing-tip",
+          "type": "info",
+          "items": [
+            "读取失败：领地可能已被删除或改名，也可能数据仍在加载。"
+          ],
+          "tone": "warning"
+        },
+        {
+          "id": "sp-missing-back",
+          "type": "spacer"
+        },
+        {
+          "id": "missing-back",
+          "type": "button",
+          "label": "返回",
+          "trigger": {
+            "type": "back"
+          }
+        }
+      ]
+    }
+  ]
+}

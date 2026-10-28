@@ -1,0 +1,429 @@
+{
+  "$schema": "https://cdn.jsdelivr.net/gh/DogeLakeDev/ScriptsForMinecraftServer@main/modules/sdk/@sfmc-sdk/schemas/ui-screen.v1.schema.json",
+  "formatVersion": 1,
+  "id": "land.detail",
+  "name": "land.detail",
+  "presentation": "form",
+  "title": "领地详情",
+  "params": {
+    "landId": {
+      "type": "string",
+      "required": true
+    }
+  },
+  "load": {
+    "view": {
+      "service": "land.ui.detail",
+      "input": {
+        "playerId": "{{player.id}}",
+        "landId": "{{params.landId}}"
+      }
+    }
+  },
+  "body": [
+    {
+      "id": "ready",
+      "type": "when",
+      "condition": {
+        "ref": "data.view"
+      },
+      "content": [
+        {
+          "id": "sp-name",
+          "type": "spacer"
+        },
+        {
+          "id": "name",
+          "type": "header",
+          "text": "{{data.view.land.name}}"
+        },
+        {
+          "id": "sp-summary",
+          "type": "spacer"
+        },
+        {
+          "id": "summary",
+          "type": "info",
+          "items": [
+            "领主：{{data.view.land.ownerName}} · 我的身份：{{data.view.relationLabel}}",
+            "状态：{{data.view.land.statusLabel}} · 等级 L{{data.view.land.level}} · {{data.view.land.chunks}} 个区块",
+            "子区域 {{data.view.land.areaCount}} · 成员 {{data.view.land.memberCount}} · 角色 {{data.view.land.roleCount}}"
+          ]
+        },
+        {
+          "id": "sp-description",
+          "type": "spacer",
+          "visibleWhen": {
+            "ref": "data.view.land.description"
+          }
+        },
+        {
+          "id": "description",
+          "type": "text",
+          "text": "{{data.view.land.description}}",
+          "tone": "muted",
+          "visibleWhen": {
+            "ref": "data.view.land.description"
+          }
+        },
+        {
+          "id": "sp-spawn",
+          "type": "spacer",
+          "visibleWhen": {
+            "ref": "data.view.land.hasSpawn"
+          }
+        },
+        {
+          "id": "spawn",
+          "type": "text",
+          "text": "出生点：{{data.view.land.spawnText}}",
+          "visibleWhen": {
+            "ref": "data.view.land.hasSpawn"
+          }
+        },
+        {
+          "id": "meta",
+          "type": "each",
+          "source": "data.view.metadata",
+          "as": "entry",
+          "template": [
+            {
+              "id": "sp-meta-line",
+              "type": "spacer"
+            },
+            {
+              "id": "meta-line",
+              "type": "text",
+              "text": "{{entry.key}} = {{entry.value}}",
+              "tone": "muted"
+            }
+          ]
+        },
+        {
+          "id": "sp-d-travel",
+          "type": "spacer"
+        },
+        {
+          "id": "d-travel",
+          "type": "divider"
+        },
+        {
+          "id": "sp-tp",
+          "type": "spacer",
+          "visibleWhen": {
+            "ref": "data.view.caps.teleport"
+          }
+        },
+        {
+          "id": "tp",
+          "type": "button",
+          "label": "传送到出生点",
+          "visibleWhen": {
+            "ref": "data.view.caps.teleport"
+          },
+          "trigger": {
+            "type": "action",
+            "action": "tp"
+          }
+        },
+        {
+          "id": "sp-border",
+          "type": "spacer"
+        },
+        {
+          "id": "border",
+          "type": "button",
+          "label": "显示领地边界",
+          "trigger": {
+            "type": "action",
+            "action": "border"
+          }
+        },
+        {
+          "id": "sp-border-stop",
+          "type": "spacer"
+        },
+        {
+          "id": "border-stop",
+          "type": "button",
+          "label": "关闭边界显示",
+          "trigger": {
+            "type": "action",
+            "action": "borderStop"
+          }
+        },
+        {
+          "id": "sp-d-nav",
+          "type": "spacer"
+        },
+        {
+          "id": "d-nav",
+          "type": "divider"
+        },
+        {
+          "id": "sp-go-members",
+          "type": "spacer"
+        },
+        {
+          "id": "go-members",
+          "type": "button",
+          "label": "成员",
+          "trigger": {
+            "type": "navigate",
+            "to": "land.members",
+            "params": {
+              "landId": "{{params.landId}}"
+            }
+          }
+        },
+        {
+          "id": "sp-go-roles",
+          "type": "spacer"
+        },
+        {
+          "id": "go-roles",
+          "type": "button",
+          "label": "角色与权限",
+          "trigger": {
+            "type": "navigate",
+            "to": "land.roles",
+            "params": {
+              "landId": "{{params.landId}}"
+            }
+          }
+        },
+        {
+          "id": "sp-go-areas",
+          "type": "spacer"
+        },
+        {
+          "id": "go-areas",
+          "type": "button",
+          "label": "子区域",
+          "trigger": {
+            "type": "navigate",
+            "to": "land.areas",
+            "params": {
+              "landId": "{{params.landId}}"
+            }
+          }
+        },
+        {
+          "id": "sp-go-flags",
+          "type": "spacer"
+        },
+        {
+          "id": "go-flags",
+          "type": "button",
+          "label": "领地旗标",
+          "trigger": {
+            "type": "navigate",
+            "to": "land.flags",
+            "params": {
+              "landId": "{{params.landId}}"
+            }
+          }
+        },
+        {
+          "id": "sp-go-finance",
+          "type": "spacer"
+        },
+        {
+          "id": "go-finance",
+          "type": "button",
+          "label": "银行与等级",
+          "trigger": {
+            "type": "navigate",
+            "to": "land.finance",
+            "params": {
+              "landId": "{{params.landId}}"
+            }
+          }
+        },
+        {
+          "id": "sp-go-settings",
+          "type": "spacer",
+          "visibleWhen": {
+            "op": "or",
+            "args": [
+              {
+                "ref": "data.view.caps.manage"
+              },
+              {
+                "ref": "data.view.caps.transfer"
+              }
+            ]
+          }
+        },
+        {
+          "id": "go-settings",
+          "type": "button",
+          "label": "设置",
+          "visibleWhen": {
+            "op": "or",
+            "args": [
+              {
+                "ref": "data.view.caps.manage"
+              },
+              {
+                "ref": "data.view.caps.transfer"
+              }
+            ]
+          },
+          "trigger": {
+            "type": "navigate",
+            "to": "land.settings",
+            "params": {
+              "landId": "{{params.landId}}"
+            }
+          }
+        },
+        {
+          "id": "sp-d-end",
+          "type": "spacer"
+        },
+        {
+          "id": "d-end",
+          "type": "divider"
+        },
+        {
+          "id": "sp-back",
+          "type": "spacer"
+        },
+        {
+          "id": "back",
+          "type": "button",
+          "label": "返回",
+          "trigger": {
+            "type": "back"
+          }
+        }
+      ]
+    },
+    {
+      "id": "missing",
+      "type": "when",
+      "condition": {
+        "op": "not",
+        "args": [
+          {
+            "ref": "data.view"
+          }
+        ]
+      },
+      "content": [
+        {
+          "id": "sp-missing-tip",
+          "type": "spacer"
+        },
+        {
+          "id": "missing-tip",
+          "type": "info",
+          "items": [
+            "读取失败：领地可能已被删除或改名，也可能数据仍在加载。"
+          ],
+          "tone": "warning"
+        },
+        {
+          "id": "sp-missing-back",
+          "type": "spacer"
+        },
+        {
+          "id": "missing-back",
+          "type": "button",
+          "label": "返回",
+          "trigger": {
+            "type": "back"
+          }
+        }
+      ]
+    }
+  ],
+  "actions": {
+    "tp": {
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "tp",
+          "args": [
+            "{{data.view.land.name}}"
+          ]
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "close"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    },
+    "border": {
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "border",
+          "args": [
+            "{{data.view.land.name}}"
+          ]
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "close"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    },
+    "borderStop": {
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "border_stop",
+          "args": []
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "refresh"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    }
+  }
+}

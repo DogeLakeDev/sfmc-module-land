@@ -328,8 +328,9 @@ export class WorldIndex {
   /**
    * 已占领区块必须落到一块区域上。
    * 默认区域记录缺失时合成一块无边界区域，避免把领地当成荒野放行。
+   * 使用场景：locate 的回退；领地界面按默认区域计算玩家对整块领地的管理能力。
    */
-  private defaultAreaOf(land: LandState): AreaState {
+  defaultAreaOf(land: LandState): AreaState {
     const stored = this.areas.get(land.defaultAreaId);
     if (stored && stored.landId === land.id) return stored;
     for (const area of this.areasOf(land.id)) {

@@ -8,10 +8,17 @@ Use names without spaces; land, area, and role names are 2–32 JavaScript strin
 
 Canonical examples include an explicit land. Optional-land commands resolve the land under the player when omitted. `claim` in wilderness therefore needs an explicit land. Only some informational/administrative commands support console; location, selection, travel, create, transfer, and player-target commands need a player.
 
+## Land menu
+
+Players run `/c:land` with no subcommand to open the land menu; the console still prints help. The menu covers every subcommand below: home (current position, my lands, invites), create, land details and settings, chunks and selection, nearby map, members, roles with permission toggles, areas, flags, bank and level, the rental/sale market, and admin tools.
+
+Every write action in the menu runs the matching subcommand through `land.ui.exec`, so authorization, validation, and messages are identical to typed commands; messages that would go to chat appear in the form status line instead. Actions that need `confirm` show a confirmation dialog first (delete, transfer, and sales require typing the name), then append `confirm` automatically. Screen files live in `sapi/src/ui`; open the module folder in UI Studio to edit them.
+
 ## General and land
 
 | Syntax | Authorization | Behavior |
 | --- | --- | --- |
+| (no subcommand) | `land.use` | Players open the land menu; the console shows help. |
 | `help` | `land.use` | Show grouped help. |
 | `create <land> [description...]` | `创建配额 / creation quota` | Create and claim the current chunk; creation cost is paid by the player. |
 | `delete <land> confirm` | `领主或服务器管理员 / owner or server admin` | Delete the graph after bank/lease/listing/transaction checks. |
@@ -122,6 +129,9 @@ Canonical examples include an explicit land. Optional-land commands resolve the 
 | `admin_tx [land]` | `land.admin` | List up to 20 non-applied transactions. |
 | `admin_legacy [filter]` | `land.admin` | List up to 20 unbound legacy placeholder identities (`xuid:<XUID>`) with their land counts; filter by name or XUID. |
 | `admin_legacy_bind <legacy XUID or name> <player> confirm` | `land.admin` | Move a placeholder's ownership, memberships, and area grants to the real player; the player's existing relations win and conflicting placeholder relations are dropped. |
+| `admin_merge <target> <source\|@connected> [confirm]` | `land.admin` | Merge same-owner source lands into the target; `@connected` means every same-owner land linked to the target by edge-adjacent chunks. Claims, box areas (with their grants and flags) and custom roles move to the target; source admins/members/trusted players become area grants inside their original land's box areas and are dropped when that land has none; source land-level flags are dropped. The target keeps its name, spawn, bank and members, and rises to the lowest level that fits the merged chunk count (never lowered). Refused when a source has a bank balance, active lease, open listing or pending transaction. Without confirm it only previews. |
+| `admin_area_prune <land> <name prefix> [confirm]` | `land.admin` | Delete box areas whose name starts with the prefix and that have no area grants, area flags, active lease or open listing; other matches are kept and listed in the preview. Without confirm it only previews. |
+| `admin_relevel [land] [confirm]` | `land.admin` | After editing the level table, raise lands whose chunk count exceeds their level cap to the lowest level that fits; never lowers and charges nothing. Checks every land when omitted. Without confirm it only previews. |
 
 ## Confirmation and observable limits
 

@@ -324,25 +324,26 @@ export async function deleteLand(actor: Actor, token: string): Promise<void> {
   return withTerritoryLock(() => deleteLandLocked(actor, token));
 }
 
-async function deleteLandLocked(actor: Actor, token: string): Promise<void> {
-  const land = requireLand(token);
-  assertOwner(actor, land);
+/**
+ * 领地整体消失（删除或被合并）前必须清空的状态；返回第一条阻止原因，没有则返回 undefined。
+ * 使用场景：deleteLand 与合并领地（consolidate.ts）共用，保证两条路径都不会静默丢弃资金、租约或挂牌。
+ */
+export async function removalBlocker(land: LandState): Promise<string | undefined> {
   const balance = await getBalance(bankOf(land));
-  if (balance > 0)
-    throw new LandError("delete_blocked", { reason: `银行仍有 ${balance}` });
+  if (balance > 0) return `银行仍有 ${balance}`;
   if (
     [...world().activeLeases.values()].some(
       (lease) => lease.landId === land.id && lease.status === "active",
     )
   ) {
-    throw new LandError("delete_blocked", { reason: "仍有有效租约" });
+    return "仍有有效租约";
   }
   if (
     [...world().listings.values()].some(
       (listing) => listing.landId === land.id && listing.status === "open",
     )
   ) {
-    throw new LandError("delete_blocked", { reason: "仍有未取消的挂牌" });
+    return "仍有未取消的挂牌";
   }
   const openTx = (await listTransactions()).filter(
     (tx) =>
@@ -351,8 +352,15 @@ async function deleteLandLocked(actor: Actor, token: string): Promise<void> {
         tx.status === "debited" ||
         tx.status === "refunding"),
   );
-  if (openTx.length > 0)
-    throw new LandError("delete_blocked", { reason: "有未完成交易" });
+  if (openTx.length > 0) return "有未完成交易";
+  return undefined;
+}
+
+async function deleteLandLocked(actor: Actor, token: string): Promise<void> {
+  const land = requireLand(token);
+  assertOwner(actor, land);
+  const blocker = await removalBlocker(land);
+  if (blocker) throw new LandError("delete_blocked", { reason: blocker });
   await beforeEvent("land.before.deleted", {
     actorId: actor.id,
     landId: land.id,
@@ -949,6 +957,18 @@ async function deleteAreaLocked(
   );
   if (listing)
     throw new LandError("delete_blocked", { reason: "区域仍在挂牌" });
+  await removeAreaRecords(land, area, actor.id);
+}
+
+/**
+ * 删除一个普通子区域及其区域授权（库、索引与 land.area.changed 事件）。调用方负责权限、租约与挂牌检查，并持有领地写锁。
+ * 使用场景：deleteArea；管理员按名称前缀清理子区域（consolidate.ts 的 pruneAreas）。
+ */
+export async function removeAreaRecords(
+  land: LandState,
+  area: AreaState,
+  actorId: string,
+): Promise<void> {
   await landTx(async (tx) => {
     for (const role of [...world().areaRoles.values()].filter(
       (item) => item.areaId === area.id,
@@ -964,7 +984,7 @@ async function deleteAreaLocked(
   }
   world().removeArea(area.id);
   await afterEvent("land.area.changed", {
-    actorId: actor.id,
+    actorId,
     landId: land.id,
     areaId: area.id,
     op: "delete",

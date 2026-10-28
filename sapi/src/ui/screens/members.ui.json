@@ -1,0 +1,884 @@
+{
+  "$schema": "https://cdn.jsdelivr.net/gh/DogeLakeDev/ScriptsForMinecraftServer@main/modules/sdk/@sfmc-sdk/schemas/ui-screen.v1.schema.json",
+  "formatVersion": 1,
+  "id": "land.members",
+  "name": "land.members",
+  "presentation": "form",
+  "title": "成员",
+  "params": {
+    "landId": {
+      "type": "string",
+      "required": true
+    }
+  },
+  "state": {
+    "memberId": {
+      "type": "string",
+      "default": ""
+    },
+    "roleId": {
+      "type": "string",
+      "default": ""
+    },
+    "onlineId": {
+      "type": "string",
+      "default": ""
+    },
+    "playerName": {
+      "type": "string",
+      "default": ""
+    }
+  },
+  "load": {
+    "view": {
+      "service": "land.ui.members",
+      "input": {
+        "playerId": "{{player.id}}",
+        "landId": "{{params.landId}}"
+      }
+    }
+  },
+  "body": [
+    {
+      "id": "ready",
+      "type": "when",
+      "condition": {
+        "ref": "data.view"
+      },
+      "content": [
+        {
+          "id": "sp-title",
+          "type": "spacer"
+        },
+        {
+          "id": "title",
+          "type": "header",
+          "text": "{{data.view.land.name}} · 成员"
+        },
+        {
+          "id": "sp-owner",
+          "type": "spacer"
+        },
+        {
+          "id": "owner",
+          "type": "info",
+          "items": [
+            "领主：{{data.view.ownerName}}"
+          ]
+        },
+        {
+          "id": "members",
+          "type": "each",
+          "source": "data.view.members",
+          "as": "member",
+          "template": [
+            {
+              "id": "sp-member-line",
+              "type": "spacer"
+            },
+            {
+              "id": "member-line",
+              "type": "info",
+              "items": [
+                "{{member.playerName}} · {{member.relationLabel}} · 角色 {{member.roleName}}"
+              ]
+            }
+          ],
+          "empty": [
+            {
+              "id": "sp-members-empty",
+              "type": "spacer"
+            },
+            {
+              "id": "members-empty",
+              "type": "info",
+              "items": [
+                "还没有成员。"
+              ],
+              "tone": "muted"
+            }
+          ]
+        },
+        {
+          "id": "manage",
+          "type": "when",
+          "condition": {
+            "ref": "data.view.caps.members"
+          },
+          "content": [
+            {
+              "id": "manage-members",
+              "type": "when",
+              "condition": {
+                "op": "greaterThan",
+                "args": [
+                  {
+                    "ref": "data.view.memberCount"
+                  },
+                  {
+                    "value": 0
+                  }
+                ]
+              },
+              "content": [
+                {
+                  "id": "sp-d-manage",
+                  "type": "spacer"
+                },
+                {
+                  "id": "d-manage",
+                  "type": "divider"
+                },
+                {
+                  "id": "sp-manage-title",
+                  "type": "spacer"
+                },
+                {
+                  "id": "manage-title",
+                  "type": "header",
+                  "text": "管理已有成员"
+                },
+                {
+                  "id": "sp-member",
+                  "type": "spacer"
+                },
+                {
+                  "id": "member",
+                  "type": "dropdown",
+                  "label": "成员",
+                  "bind": "state.memberId",
+                  "options": {
+                    "source": "data.view.members",
+                    "as": "row",
+                    "value": "{{row.playerId}}",
+                    "label": "{{row.playerName}}（{{row.relationLabel}}）"
+                  }
+                },
+                {
+                  "id": "sp-role",
+                  "type": "spacer"
+                },
+                {
+                  "id": "role",
+                  "type": "dropdown",
+                  "label": "角色",
+                  "bind": "state.roleId",
+                  "options": {
+                    "source": "data.view.roles",
+                    "as": "role",
+                    "value": "{{role.id}}",
+                    "label": "{{role.name}}"
+                  }
+                },
+                {
+                  "id": "sp-assign",
+                  "type": "spacer"
+                },
+                {
+                  "id": "assign",
+                  "type": "button",
+                  "label": "设为所选角色",
+                  "tone": "primary",
+                  "trigger": {
+                    "type": "action",
+                    "action": "assign"
+                  }
+                },
+                {
+                  "id": "sp-untrust",
+                  "type": "spacer"
+                },
+                {
+                  "id": "untrust",
+                  "type": "button",
+                  "label": "取消信任",
+                  "trigger": {
+                    "type": "action",
+                    "action": "untrust"
+                  }
+                },
+                {
+                  "id": "sp-kick",
+                  "type": "spacer"
+                },
+                {
+                  "id": "kick",
+                  "type": "button",
+                  "label": "移出领地",
+                  "tone": "danger",
+                  "trigger": {
+                    "type": "action",
+                    "action": "kick"
+                  }
+                },
+                {
+                  "id": "sp-ban-member",
+                  "type": "spacer"
+                },
+                {
+                  "id": "ban-member",
+                  "type": "button",
+                  "label": "封禁该成员",
+                  "tone": "danger",
+                  "trigger": {
+                    "type": "action",
+                    "action": "banMember"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "sp-d-invite",
+              "type": "spacer"
+            },
+            {
+              "id": "d-invite",
+              "type": "divider"
+            },
+            {
+              "id": "sp-invite-title",
+              "type": "spacer"
+            },
+            {
+              "id": "invite-title",
+              "type": "header",
+              "text": "邀请与信任"
+            },
+            {
+              "id": "online-block",
+              "type": "when",
+              "condition": {
+                "op": "greaterThan",
+                "args": [
+                  {
+                    "ref": "data.view.onlineCount"
+                  },
+                  {
+                    "value": 0
+                  }
+                ]
+              },
+              "content": [
+                {
+                  "id": "sp-online",
+                  "type": "spacer"
+                },
+                {
+                  "id": "online",
+                  "type": "dropdown",
+                  "label": "在线玩家",
+                  "bind": "state.onlineId",
+                  "options": {
+                    "source": "data.view.online",
+                    "as": "p",
+                    "value": "{{p.id}}",
+                    "label": "{{p.name}}"
+                  }
+                },
+                {
+                  "id": "sp-invite-online",
+                  "type": "spacer"
+                },
+                {
+                  "id": "invite-online",
+                  "type": "button",
+                  "label": "邀请为成员",
+                  "tone": "primary",
+                  "trigger": {
+                    "type": "action",
+                    "action": "inviteOnline"
+                  }
+                },
+                {
+                  "id": "sp-trust-online",
+                  "type": "spacer"
+                },
+                {
+                  "id": "trust-online",
+                  "type": "button",
+                  "label": "设为信任（访客角色）",
+                  "trigger": {
+                    "type": "action",
+                    "action": "trustOnline"
+                  }
+                },
+                {
+                  "id": "sp-ban-online",
+                  "type": "spacer"
+                },
+                {
+                  "id": "ban-online",
+                  "type": "button",
+                  "label": "封禁",
+                  "tone": "danger",
+                  "trigger": {
+                    "type": "action",
+                    "action": "banOnline"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "sp-player-name",
+              "type": "spacer"
+            },
+            {
+              "id": "player-name",
+              "type": "textField",
+              "label": "按名字操作（可填离线玩家）",
+              "bind": "state.playerName",
+              "placeholder": "玩家名"
+            },
+            {
+              "id": "sp-invite-name",
+              "type": "spacer"
+            },
+            {
+              "id": "invite-name",
+              "type": "button",
+              "label": "按名字邀请",
+              "trigger": {
+                "type": "action",
+                "action": "inviteName"
+              }
+            },
+            {
+              "id": "sp-trust-name",
+              "type": "spacer"
+            },
+            {
+              "id": "trust-name",
+              "type": "button",
+              "label": "按名字信任",
+              "trigger": {
+                "type": "action",
+                "action": "trustName"
+              }
+            },
+            {
+              "id": "sp-ban-name",
+              "type": "spacer"
+            },
+            {
+              "id": "ban-name",
+              "type": "button",
+              "label": "按名字封禁",
+              "tone": "danger",
+              "trigger": {
+                "type": "action",
+                "action": "banName"
+              }
+            },
+            {
+              "id": "banned",
+              "type": "when",
+              "condition": {
+                "op": "greaterThan",
+                "args": [
+                  {
+                    "ref": "data.view.bannedCount"
+                  },
+                  {
+                    "value": 0
+                  }
+                ]
+              },
+              "content": [
+                {
+                  "id": "sp-d-banned",
+                  "type": "spacer"
+                },
+                {
+                  "id": "d-banned",
+                  "type": "divider"
+                },
+                {
+                  "id": "sp-banned-title",
+                  "type": "spacer"
+                },
+                {
+                  "id": "banned-title",
+                  "type": "header",
+                  "text": "封禁名单"
+                },
+                {
+                  "id": "banned-list",
+                  "type": "each",
+                  "source": "data.view.banned",
+                  "as": "item",
+                  "template": [
+                    {
+                      "id": "sp-unban",
+                      "type": "spacer"
+                    },
+                    {
+                      "id": "unban",
+                      "type": "button",
+                      "label": "解除封禁：{{item.playerName}}",
+                      "trigger": {
+                        "type": "action",
+                        "action": "unban",
+                        "input": {
+                          "args": [
+                            "{{data.view.land.name}}",
+                            "{{item.playerId}}",
+                            "confirm"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "sp-d-end",
+          "type": "spacer"
+        },
+        {
+          "id": "d-end",
+          "type": "divider"
+        },
+        {
+          "id": "sp-back",
+          "type": "spacer"
+        },
+        {
+          "id": "back",
+          "type": "button",
+          "label": "返回",
+          "trigger": {
+            "type": "back"
+          }
+        }
+      ]
+    },
+    {
+      "id": "missing",
+      "type": "when",
+      "condition": {
+        "op": "not",
+        "args": [
+          {
+            "ref": "data.view"
+          }
+        ]
+      },
+      "content": [
+        {
+          "id": "sp-missing-tip",
+          "type": "spacer"
+        },
+        {
+          "id": "missing-tip",
+          "type": "info",
+          "items": [
+            "读取失败：领地可能已被删除或改名，也可能数据仍在加载。"
+          ],
+          "tone": "warning"
+        },
+        {
+          "id": "sp-missing-back",
+          "type": "spacer"
+        },
+        {
+          "id": "missing-back",
+          "type": "button",
+          "label": "返回",
+          "trigger": {
+            "type": "back"
+          }
+        }
+      ]
+    }
+  ],
+  "actions": {
+    "assign": {
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "assign",
+          "args": [
+            "{{data.view.land.name}}",
+            "{{state.memberId}}",
+            "{{state.roleId}}"
+          ]
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "refresh"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    },
+    "untrust": {
+      "confirm": {
+        "title": "取消信任",
+        "body": "取消所选玩家在「{{data.view.land.name}}」的信任关系？",
+        "confirmText": "确认"
+      },
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "untrust",
+          "args": [
+            "{{data.view.land.name}}",
+            "{{state.memberId}}",
+            "confirm"
+          ]
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "refresh"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    },
+    "kick": {
+      "confirm": {
+        "title": "移出成员",
+        "body": "把所选成员移出「{{data.view.land.name}}」？",
+        "confirmText": "移出",
+        "danger": true
+      },
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "kick",
+          "args": [
+            "{{data.view.land.name}}",
+            "{{state.memberId}}",
+            "confirm"
+          ]
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "refresh"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    },
+    "banMember": {
+      "confirm": {
+        "title": "封禁成员",
+        "body": "封禁所选成员？对方将无法进入「{{data.view.land.name}}」。",
+        "confirmText": "封禁",
+        "danger": true
+      },
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "ban",
+          "args": [
+            "{{data.view.land.name}}",
+            "{{state.memberId}}",
+            "confirm"
+          ]
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "refresh"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    },
+    "inviteOnline": {
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "invite",
+          "args": [
+            "{{data.view.land.name}}",
+            "{{state.onlineId}}"
+          ]
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "refresh"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    },
+    "trustOnline": {
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "trust",
+          "args": [
+            "{{data.view.land.name}}",
+            "{{state.onlineId}}"
+          ]
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "refresh"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    },
+    "banOnline": {
+      "confirm": {
+        "title": "封禁玩家",
+        "body": "封禁所选在线玩家？对方将无法进入「{{data.view.land.name}}」。",
+        "confirmText": "封禁",
+        "danger": true
+      },
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "ban",
+          "args": [
+            "{{data.view.land.name}}",
+            "{{state.onlineId}}",
+            "confirm"
+          ]
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "refresh"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    },
+    "inviteName": {
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "invite",
+          "args": [
+            "{{data.view.land.name}}",
+            "{{state.playerName}}"
+          ]
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "setState",
+          "values": {
+            "playerName": ""
+          }
+        },
+        {
+          "effect": "refresh"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    },
+    "trustName": {
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "trust",
+          "args": [
+            "{{data.view.land.name}}",
+            "{{state.playerName}}"
+          ]
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "setState",
+          "values": {
+            "playerName": ""
+          }
+        },
+        {
+          "effect": "refresh"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    },
+    "banName": {
+      "confirm": {
+        "title": "封禁玩家",
+        "body": "封禁 {{state.playerName}}？对方将无法进入「{{data.view.land.name}}」。",
+        "confirmText": "封禁",
+        "danger": true
+      },
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "ban",
+          "args": [
+            "{{data.view.land.name}}",
+            "{{state.playerName}}",
+            "confirm"
+          ]
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "setState",
+          "values": {
+            "playerName": ""
+          }
+        },
+        {
+          "effect": "refresh"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    },
+    "unban": {
+      "confirm": {
+        "title": "解除封禁",
+        "body": "解除对 {{item.playerName}} 的封禁？",
+        "confirmText": "解除"
+      },
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "unban",
+          "args": []
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "refresh"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    }
+  }
+}

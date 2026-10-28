@@ -345,6 +345,32 @@ export async function rebindAreaRole(
   });
 }
 
+/**
+ * 把区域授权改挂到另一块领地（同时换成目标领地的角色 ID）。
+ * 使用场景：合并领地时，随子区域迁入目标领地的区域授权。
+ */
+export async function moveAreaRole(
+  role: AreaRoleState,
+  tx?: TxContext,
+): Promise<void> {
+  await store(tx).update(TABLES.areaRole, role.id, {
+    land_id: role.landId,
+    role_id: role.roleId,
+  });
+}
+
+/**
+ * 把一条占领记录改归另一块领地，区块键与坐标不变。
+ * 使用场景：合并领地时把来源领地的区块整体转给目标领地。
+ */
+export async function reassignClaim(
+  claimId: string,
+  landId: string,
+  tx?: TxContext,
+): Promise<void> {
+  await store(tx).update(TABLES.claim, claimId, { land_id: landId });
+}
+
 export async function upsertFlag(
   row: {
     id: string;

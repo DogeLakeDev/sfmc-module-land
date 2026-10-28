@@ -1,0 +1,69 @@
+{
+  "$schema": "https://cdn.jsdelivr.net/gh/DogeLakeDev/ScriptsForMinecraftServer@main/modules/sdk/@sfmc-sdk/schemas/ui-feature.v1.schema.json",
+  "formatVersion": 1,
+  "moduleId": "land",
+  "name": "领地",
+  "entries": [],
+  "screens": [
+    {
+      "id": "land.home",
+      "file": "screens/home.ui.json"
+    },
+    {
+      "id": "land.create",
+      "file": "screens/create.ui.json"
+    },
+    {
+      "id": "land.detail",
+      "file": "screens/detail.ui.json"
+    },
+    {
+      "id": "land.settings",
+      "file": "screens/settings.ui.json"
+    },
+    {
+      "id": "land.chunks",
+      "file": "screens/chunks.ui.json"
+    },
+    {
+      "id": "land.map",
+      "file": "screens/map.ui.json"
+    },
+    {
+      "id": "land.members",
+      "file": "screens/members.ui.json"
+    },
+    {
+      "id": "land.roles",
+      "file": "screens/roles.ui.json"
+    },
+    {
+      "id": "land.role",
+      "file": "screens/role.ui.json"
+    },
+    {
+      "id": "land.areas",
+      "file": "screens/areas.ui.json"
+    },
+    {
+      "id": "land.area",
+      "file": "screens/area.ui.json"
+    },
+    {
+      "id": "land.flags",
+      "file": "screens/flags.ui.json"
+    },
+    {
+      "id": "land.finance",
+      "file": "screens/finance.ui.json"
+    },
+    {
+      "id": "land.market",
+      "file": "screens/market.ui.json"
+    },
+    {
+      "id": "land.admin",
+      "file": "screens/admin.ui.json"
+    }
+  ]
+}

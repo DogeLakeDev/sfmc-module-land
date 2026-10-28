@@ -2,7 +2,7 @@
 
 [中文](README.md) · [Documentation](docs/README.md)
 
-Chunk-based land ownership for SFMC. A Land claims chunks across dimensions; box Areas inside those claims override member roles in 3D space. `/c:land` manages lands, custom roles, flags, banks, upkeep, rentals, and sales.
+Chunk-based land ownership for SFMC. A Land claims chunks across dimensions; box Areas inside those claims override member roles in 3D space. `/c:land` manages lands, custom roles, flags, banks, upkeep, rentals, and sales; players can run `/c:land` with no subcommand to open a menu covering all of it.
 
 Version `1.0.0` uses commands only, the SFMC database abstraction, and an in-memory protection index. Legacy `sfmc_lands` lease rows are not migrated.
 

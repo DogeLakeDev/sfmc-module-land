@@ -1,0 +1,431 @@
+{
+  "$schema": "https://cdn.jsdelivr.net/gh/DogeLakeDev/ScriptsForMinecraftServer@main/modules/sdk/@sfmc-sdk/schemas/ui-screen.v1.schema.json",
+  "formatVersion": 1,
+  "id": "land.market",
+  "name": "land.market",
+  "presentation": "form",
+  "title": "租售市场",
+  "load": {
+    "view": {
+      "service": "land.ui.market",
+      "input": {
+        "playerId": "{{player.id}}"
+      }
+    }
+  },
+  "body": [
+    {
+      "id": "ready",
+      "type": "when",
+      "condition": {
+        "ref": "data.view"
+      },
+      "content": [
+        {
+          "id": "sp-rent-title",
+          "type": "spacer"
+        },
+        {
+          "id": "rent-title",
+          "type": "header",
+          "text": "可租区域"
+        },
+        {
+          "id": "rents",
+          "type": "each",
+          "source": "data.view.rents",
+          "as": "item",
+          "template": [
+            {
+              "id": "sp-rent-take",
+              "type": "spacer"
+            },
+            {
+              "id": "rent-take",
+              "type": "button",
+              "label": "{{item.landName}} / {{item.areaName}}",
+              "description": "租金 {{item.price}} · 每 {{item.periodHours}} 小时",
+              "trigger": {
+                "type": "action",
+                "action": "rentTake",
+                "input": {
+                  "args": [
+                    "{{item.landName}}",
+                    "{{item.areaName}}"
+                  ]
+                }
+              }
+            }
+          ],
+          "empty": [
+            {
+              "id": "sp-rents-empty",
+              "type": "spacer"
+            },
+            {
+              "id": "rents-empty",
+              "type": "info",
+              "items": [
+                "暂时没有出租的区域。"
+              ],
+              "tone": "muted"
+            }
+          ]
+        },
+        {
+          "id": "sp-d-sale",
+          "type": "spacer"
+        },
+        {
+          "id": "d-sale",
+          "type": "divider"
+        },
+        {
+          "id": "sp-sale-title",
+          "type": "spacer"
+        },
+        {
+          "id": "sale-title",
+          "type": "header",
+          "text": "出售中"
+        },
+        {
+          "id": "sales",
+          "type": "each",
+          "source": "data.view.sales",
+          "as": "item",
+          "template": [
+            {
+              "id": "sp-buy",
+              "type": "spacer"
+            },
+            {
+              "id": "buy",
+              "type": "button",
+              "label": "{{item.landName}} {{item.areaName}}",
+              "description": "售价 {{item.price}}",
+              "trigger": {
+                "type": "action",
+                "action": "buy",
+                "input": {
+                  "args": [
+                    "{{item.landName}}",
+                    "{{item.areaName}}",
+                    "confirm"
+                  ]
+                }
+              }
+            }
+          ],
+          "empty": [
+            {
+              "id": "sp-sales-empty",
+              "type": "spacer"
+            },
+            {
+              "id": "sales-empty",
+              "type": "info",
+              "items": [
+                "暂时没有出售的领地或区域。"
+              ],
+              "tone": "muted"
+            }
+          ]
+        },
+        {
+          "id": "sp-d-lease",
+          "type": "spacer"
+        },
+        {
+          "id": "d-lease",
+          "type": "divider"
+        },
+        {
+          "id": "sp-lease-title",
+          "type": "spacer"
+        },
+        {
+          "id": "lease-title",
+          "type": "header",
+          "text": "我的租约"
+        },
+        {
+          "id": "leases",
+          "type": "each",
+          "source": "data.view.leases",
+          "as": "item",
+          "template": [
+            {
+              "id": "sp-lease-line",
+              "type": "spacer"
+            },
+            {
+              "id": "lease-line",
+              "type": "info",
+              "items": [
+                "{{item.landName}} / {{item.areaName}} · 剩余约 {{item.hoursLeft}} 小时 · 租金 {{item.price}}"
+              ]
+            },
+            {
+              "id": "sp-renew",
+              "type": "spacer"
+            },
+            {
+              "id": "renew",
+              "type": "button",
+              "label": "续租",
+              "tone": "primary",
+              "trigger": {
+                "type": "action",
+                "action": "renew",
+                "input": {
+                  "args": [
+                    "{{item.landName}}",
+                    "{{item.areaName}}"
+                  ]
+                }
+              }
+            },
+            {
+              "id": "sp-end",
+              "type": "spacer"
+            },
+            {
+              "id": "end",
+              "type": "button",
+              "label": "退租",
+              "tone": "danger",
+              "trigger": {
+                "type": "action",
+                "action": "endLease",
+                "input": {
+                  "args": [
+                    "{{item.landName}}",
+                    "{{item.areaName}}",
+                    "confirm"
+                  ]
+                }
+              }
+            }
+          ],
+          "empty": [
+            {
+              "id": "sp-leases-empty",
+              "type": "spacer"
+            },
+            {
+              "id": "leases-empty",
+              "type": "info",
+              "items": [
+                "你没有正在生效的租约。"
+              ],
+              "tone": "muted"
+            }
+          ]
+        },
+        {
+          "id": "sp-d-end",
+          "type": "spacer"
+        },
+        {
+          "id": "d-end",
+          "type": "divider"
+        },
+        {
+          "id": "sp-refresh",
+          "type": "spacer"
+        },
+        {
+          "id": "refresh",
+          "type": "button",
+          "label": "刷新",
+          "trigger": {
+            "type": "refresh"
+          }
+        },
+        {
+          "id": "sp-back",
+          "type": "spacer"
+        },
+        {
+          "id": "back",
+          "type": "button",
+          "label": "返回",
+          "trigger": {
+            "type": "back"
+          }
+        }
+      ]
+    },
+    {
+      "id": "missing",
+      "type": "when",
+      "condition": {
+        "op": "not",
+        "args": [
+          {
+            "ref": "data.view"
+          }
+        ]
+      },
+      "content": [
+        {
+          "id": "sp-missing-tip",
+          "type": "spacer"
+        },
+        {
+          "id": "missing-tip",
+          "type": "info",
+          "items": [
+            "读取失败：领地可能已被删除或改名，也可能数据仍在加载。"
+          ],
+          "tone": "warning"
+        },
+        {
+          "id": "sp-missing-back",
+          "type": "spacer"
+        },
+        {
+          "id": "missing-back",
+          "type": "button",
+          "label": "返回",
+          "trigger": {
+            "type": "back"
+          }
+        }
+      ]
+    }
+  ],
+  "actions": {
+    "rentTake": {
+      "confirm": {
+        "title": "租下区域",
+        "body": "租下「{{item.landName}} / {{item.areaName}}」，支付 {{item.price}}？",
+        "confirmText": "租下"
+      },
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "rent_take",
+          "args": []
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "refresh"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    },
+    "buy": {
+      "confirm": {
+        "title": "购买",
+        "body": "以 {{item.price}} 购买「{{item.landName}} {{item.areaName}}」？",
+        "confirmText": "购买",
+        "danger": true
+      },
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "buy",
+          "args": []
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "refresh"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    },
+    "renew": {
+      "confirm": {
+        "title": "续租",
+        "body": "续租「{{item.landName}} / {{item.areaName}}」并支付 {{item.price}}？",
+        "confirmText": "续租"
+      },
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "rent_renew",
+          "args": []
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "refresh"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    },
+    "endLease": {
+      "confirm": {
+        "title": "退租",
+        "body": "提前结束「{{item.landName}} / {{item.areaName}}」的租约？",
+        "confirmText": "退租",
+        "danger": true
+      },
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "rent_end",
+          "args": []
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "refresh"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    }
+  }
+}

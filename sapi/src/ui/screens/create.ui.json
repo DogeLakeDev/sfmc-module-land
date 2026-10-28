@@ -1,0 +1,113 @@
+{
+  "$schema": "https://cdn.jsdelivr.net/gh/DogeLakeDev/ScriptsForMinecraftServer@main/modules/sdk/@sfmc-sdk/schemas/ui-screen.v1.schema.json",
+  "formatVersion": 1,
+  "id": "land.create",
+  "name": "land.create",
+  "presentation": "form",
+  "title": "创建领地",
+  "state": {
+    "name": {
+      "type": "string",
+      "default": "",
+      "maxLength": 32
+    },
+    "description": {
+      "type": "string",
+      "default": "",
+      "maxLength": 200
+    }
+  },
+  "body": [
+    {
+      "id": "sp-tip",
+      "type": "spacer"
+    },
+    {
+      "id": "tip",
+      "type": "info",
+      "items": [
+        "站在想要的位置创建，会自动占领脚下区块，并按服务器配置扣除占领费用。"
+      ],
+      "tone": "muted"
+    },
+    {
+      "id": "sp-name",
+      "type": "spacer"
+    },
+    {
+      "id": "name",
+      "type": "textField",
+      "label": "领地名称",
+      "bind": "state.name",
+      "placeholder": "2～32 个字符"
+    },
+    {
+      "id": "sp-description",
+      "type": "spacer"
+    },
+    {
+      "id": "description",
+      "type": "textField",
+      "label": "简介（可选）",
+      "bind": "state.description"
+    },
+    {
+      "id": "sp-create",
+      "type": "spacer"
+    },
+    {
+      "id": "create",
+      "type": "button",
+      "label": "创建",
+      "tone": "primary",
+      "trigger": {
+        "type": "action",
+        "action": "create"
+      }
+    },
+    {
+      "id": "sp-back",
+      "type": "spacer"
+    },
+    {
+      "id": "back",
+      "type": "button",
+      "label": "返回",
+      "trigger": {
+        "type": "back"
+      }
+    }
+  ],
+  "actions": {
+    "create": {
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "create",
+          "args": [
+            "{{state.name}}",
+            "{{state.description}}"
+          ]
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "back"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    }
+  }
+}

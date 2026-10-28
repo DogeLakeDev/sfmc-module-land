@@ -1,0 +1,542 @@
+{
+  "$schema": "https://cdn.jsdelivr.net/gh/DogeLakeDev/ScriptsForMinecraftServer@main/modules/sdk/@sfmc-sdk/schemas/ui-screen.v1.schema.json",
+  "formatVersion": 1,
+  "id": "land.home",
+  "name": "land.home",
+  "presentation": "form",
+  "title": "领地",
+  "load": {
+    "view": {
+      "service": "land.ui.home",
+      "input": {
+        "playerId": "{{player.id}}"
+      }
+    }
+  },
+  "body": [
+    {
+      "id": "ready",
+      "type": "when",
+      "condition": {
+        "ref": "data.view"
+      },
+      "content": [
+        {
+          "id": "here-land",
+          "type": "when",
+          "condition": {
+            "ref": "data.view.inLand"
+          },
+          "content": [
+            {
+              "id": "sp-here-info",
+              "type": "spacer"
+            },
+            {
+              "id": "here-info",
+              "type": "info",
+              "items": [
+                "脚下：{{data.view.here.landName}} {{data.view.here.areaName}}",
+                "领主：{{data.view.here.ownerName}} · 我的身份：{{data.view.here.relationLabel}}"
+              ]
+            },
+            {
+              "id": "sp-here-open",
+              "type": "spacer"
+            },
+            {
+              "id": "here-open",
+              "type": "button",
+              "label": "查看脚下领地",
+              "trigger": {
+                "type": "navigate",
+                "to": "land.detail",
+                "params": {
+                  "landId": "{{data.view.here.landId}}"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "id": "here-wild",
+          "type": "when",
+          "condition": {
+            "op": "not",
+            "args": [
+              {
+                "ref": "data.view.inLand"
+              }
+            ]
+          },
+          "content": [
+            {
+              "id": "sp-wild-info",
+              "type": "spacer"
+            },
+            {
+              "id": "wild-info",
+              "type": "info",
+              "items": [
+                "脚下：荒野，可以在这里创建领地。"
+              ],
+              "tone": "muted"
+            }
+          ]
+        },
+        {
+          "id": "sp-d-lands",
+          "type": "spacer"
+        },
+        {
+          "id": "d-lands",
+          "type": "divider"
+        },
+        {
+          "id": "sp-lands-title",
+          "type": "spacer"
+        },
+        {
+          "id": "lands-title",
+          "type": "header",
+          "text": "我的领地"
+        },
+        {
+          "id": "sp-lands-quota",
+          "type": "spacer"
+        },
+        {
+          "id": "lands-quota",
+          "type": "text",
+          "text": "名下领地 {{data.view.landQuota.used}} / {{data.view.landQuota.limit}}",
+          "tone": "muted"
+        },
+        {
+          "id": "lands",
+          "type": "each",
+          "source": "data.view.lands",
+          "as": "land",
+          "template": [
+            {
+              "id": "sp-land-open",
+              "type": "spacer"
+            },
+            {
+              "id": "land-open",
+              "type": "button",
+              "label": "{{land.name}}",
+              "description": "{{land.relationLabel}} · L{{land.level}} · {{land.chunks}} 个区块 · {{land.statusLabel}}",
+              "trigger": {
+                "type": "navigate",
+                "to": "land.detail",
+                "params": {
+                  "landId": "{{land.id}}"
+                }
+              }
+            }
+          ],
+          "empty": [
+            {
+              "id": "sp-lands-empty",
+              "type": "spacer"
+            },
+            {
+              "id": "lands-empty",
+              "type": "info",
+              "items": [
+                "你还没有加入任何领地。"
+              ],
+              "tone": "muted"
+            }
+          ]
+        },
+        {
+          "id": "invites",
+          "type": "when",
+          "condition": {
+            "op": "greaterThan",
+            "args": [
+              {
+                "ref": "data.view.inviteCount"
+              },
+              {
+                "value": 0
+              }
+            ]
+          },
+          "content": [
+            {
+              "id": "sp-d-invites",
+              "type": "spacer"
+            },
+            {
+              "id": "d-invites",
+              "type": "divider"
+            },
+            {
+              "id": "sp-invites-title",
+              "type": "spacer"
+            },
+            {
+              "id": "invites-title",
+              "type": "header",
+              "text": "待处理邀请"
+            },
+            {
+              "id": "invite-list",
+              "type": "each",
+              "source": "data.view.invites",
+              "as": "item",
+              "template": [
+                {
+                  "id": "sp-invite-info",
+                  "type": "spacer"
+                },
+                {
+                  "id": "invite-info",
+                  "type": "info",
+                  "items": [
+                    "「{{item.landName}}」邀请你加入"
+                  ]
+                },
+                {
+                  "id": "sp-invite-accept",
+                  "type": "spacer"
+                },
+                {
+                  "id": "invite-accept",
+                  "type": "button",
+                  "label": "接受",
+                  "tone": "primary",
+                  "trigger": {
+                    "type": "action",
+                    "action": "accept",
+                    "input": {
+                      "args": [
+                        "{{item.landName}}"
+                      ]
+                    }
+                  }
+                },
+                {
+                  "id": "sp-invite-deny",
+                  "type": "spacer"
+                },
+                {
+                  "id": "invite-deny",
+                  "type": "button",
+                  "label": "拒绝",
+                  "trigger": {
+                    "type": "action",
+                    "action": "deny",
+                    "input": {
+                      "args": [
+                        "{{item.landName}}"
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "sp-d-nav",
+          "type": "spacer"
+        },
+        {
+          "id": "d-nav",
+          "type": "divider"
+        },
+        {
+          "id": "sp-go-create",
+          "type": "spacer"
+        },
+        {
+          "id": "go-create",
+          "type": "button",
+          "label": "创建领地",
+          "tone": "primary",
+          "description": "在脚下区块创建一块新领地",
+          "trigger": {
+            "type": "navigate",
+            "to": "land.create"
+          }
+        },
+        {
+          "id": "sp-go-chunks",
+          "type": "spacer"
+        },
+        {
+          "id": "go-chunks",
+          "type": "button",
+          "label": "区块与选区",
+          "description": "占领、释放区块，记录选区",
+          "trigger": {
+            "type": "navigate",
+            "to": "land.chunks"
+          }
+        },
+        {
+          "id": "sp-go-map",
+          "type": "spacer"
+        },
+        {
+          "id": "go-map",
+          "type": "button",
+          "label": "附近地图",
+          "trigger": {
+            "type": "navigate",
+            "to": "land.map"
+          }
+        },
+        {
+          "id": "sp-go-market",
+          "type": "spacer"
+        },
+        {
+          "id": "go-market",
+          "type": "button",
+          "label": "租售市场",
+          "trigger": {
+            "type": "navigate",
+            "to": "land.market"
+          }
+        },
+        {
+          "id": "sp-go-admin",
+          "type": "spacer",
+          "visibleWhen": {
+            "ref": "data.view.isAdmin"
+          }
+        },
+        {
+          "id": "go-admin",
+          "type": "button",
+          "label": "管理员工具",
+          "visibleWhen": {
+            "ref": "data.view.isAdmin"
+          },
+          "trigger": {
+            "type": "navigate",
+            "to": "land.admin"
+          }
+        },
+        {
+          "id": "sp-d-misc",
+          "type": "spacer"
+        },
+        {
+          "id": "d-misc",
+          "type": "divider"
+        },
+        {
+          "id": "sp-help",
+          "type": "spacer"
+        },
+        {
+          "id": "help",
+          "type": "button",
+          "label": "命令帮助",
+          "trigger": {
+            "type": "action",
+            "action": "help"
+          }
+        },
+        {
+          "id": "sp-lang-zh",
+          "type": "spacer"
+        },
+        {
+          "id": "lang-zh",
+          "type": "button",
+          "label": "提示语言：中文",
+          "trigger": {
+            "type": "action",
+            "action": "lang",
+            "input": {
+              "args": [
+                "zh"
+              ]
+            }
+          }
+        },
+        {
+          "id": "sp-lang-en",
+          "type": "spacer"
+        },
+        {
+          "id": "lang-en",
+          "type": "button",
+          "label": "Message language: English",
+          "trigger": {
+            "type": "action",
+            "action": "lang",
+            "input": {
+              "args": [
+                "en"
+              ]
+            }
+          }
+        },
+        {
+          "id": "sp-close",
+          "type": "spacer"
+        },
+        {
+          "id": "close",
+          "type": "button",
+          "label": "关闭",
+          "trigger": {
+            "type": "close"
+          }
+        }
+      ]
+    },
+    {
+      "id": "missing",
+      "type": "when",
+      "condition": {
+        "op": "not",
+        "args": [
+          {
+            "ref": "data.view"
+          }
+        ]
+      },
+      "content": [
+        {
+          "id": "sp-missing-tip",
+          "type": "spacer"
+        },
+        {
+          "id": "missing-tip",
+          "type": "info",
+          "items": [
+            "读取失败：领地可能已被删除或改名，也可能数据仍在加载。"
+          ],
+          "tone": "warning"
+        },
+        {
+          "id": "sp-missing-back",
+          "type": "spacer"
+        },
+        {
+          "id": "missing-back",
+          "type": "button",
+          "label": "返回",
+          "trigger": {
+            "type": "back"
+          }
+        }
+      ]
+    }
+  ],
+  "actions": {
+    "accept": {
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "accept",
+          "args": []
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "refresh"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    },
+    "deny": {
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "deny",
+          "args": []
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "refresh"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    },
+    "help": {
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "help",
+          "args": []
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    },
+    "lang": {
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "lang",
+          "args": []
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "refresh"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    }
+  }
+}

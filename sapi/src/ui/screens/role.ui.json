@@ -1,0 +1,528 @@
+{
+  "$schema": "https://cdn.jsdelivr.net/gh/DogeLakeDev/ScriptsForMinecraftServer@main/modules/sdk/@sfmc-sdk/schemas/ui-screen.v1.schema.json",
+  "formatVersion": 1,
+  "id": "land.role",
+  "name": "land.role",
+  "presentation": "form",
+  "title": "角色权限",
+  "params": {
+    "landId": {
+      "type": "string",
+      "required": true
+    },
+    "roleId": {
+      "type": "string",
+      "required": true
+    }
+  },
+  "state": {
+    "newName": {
+      "type": "string",
+      "default": "",
+      "maxLength": 32
+    },
+    "description": {
+      "type": "string",
+      "default": "",
+      "maxLength": 200
+    },
+    "replacementId": {
+      "type": "string",
+      "default": ""
+    }
+  },
+  "load": {
+    "view": {
+      "service": "land.ui.role",
+      "input": {
+        "playerId": "{{player.id}}",
+        "landId": "{{params.landId}}",
+        "roleId": "{{params.roleId}}"
+      }
+    }
+  },
+  "body": [
+    {
+      "id": "ready",
+      "type": "when",
+      "condition": {
+        "ref": "data.view"
+      },
+      "content": [
+        {
+          "id": "sp-title",
+          "type": "spacer"
+        },
+        {
+          "id": "title",
+          "type": "header",
+          "text": "{{data.view.role.name}}"
+        },
+        {
+          "id": "sp-description",
+          "type": "spacer",
+          "visibleWhen": {
+            "ref": "data.view.role.description"
+          }
+        },
+        {
+          "id": "description",
+          "type": "text",
+          "text": "{{data.view.role.description}}",
+          "tone": "muted",
+          "visibleWhen": {
+            "ref": "data.view.role.description"
+          }
+        },
+        {
+          "id": "sp-usage",
+          "type": "spacer"
+        },
+        {
+          "id": "usage",
+          "type": "info",
+          "items": [
+            "所属领地：{{data.view.land.name}} · 使用中 {{data.view.userCount}} 处（成员与区域授权）"
+          ]
+        },
+        {
+          "id": "sp-reserved",
+          "type": "spacer",
+          "visibleWhen": {
+            "ref": "data.view.role.reserved"
+          }
+        },
+        {
+          "id": "reserved",
+          "type": "text",
+          "text": "预置角色：可以调整权限，但不能删除。",
+          "tone": "muted",
+          "visibleWhen": {
+            "ref": "data.view.role.reserved"
+          }
+        },
+        {
+          "id": "sp-d-perms",
+          "type": "spacer"
+        },
+        {
+          "id": "d-perms",
+          "type": "divider"
+        },
+        {
+          "id": "edit-perms",
+          "type": "when",
+          "condition": {
+            "ref": "data.view.caps.roles"
+          },
+          "content": [
+            {
+              "id": "sp-perm-title",
+              "type": "spacer"
+            },
+            {
+              "id": "perm-title",
+              "type": "header",
+              "text": "权限（拨动即生效）"
+            },
+            {
+              "id": "perm-toggles",
+              "type": "each",
+              "source": "data.view.permissions",
+              "as": "item",
+              "template": [
+                {
+                  "id": "sp-perm-toggle",
+                  "type": "spacer"
+                },
+                {
+                  "id": "perm-toggle",
+                  "type": "toggle",
+                  "label": "{{item.description}}",
+                  "bind": "item.granted",
+                  "tooltip": "{{item.id}}",
+                  "trigger": {
+                    "type": "action",
+                    "action": "setPermission",
+                    "input": {
+                      "value": "{{item.granted}}",
+                      "args": [
+                        "{{data.view.land.name}}",
+                        "{{data.view.role.name}}",
+                        "{{item.id}}"
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "view-perms",
+          "type": "when",
+          "condition": {
+            "op": "not",
+            "args": [
+              {
+                "ref": "data.view.caps.roles"
+              }
+            ]
+          },
+          "content": [
+            {
+              "id": "sp-perm-view-title",
+              "type": "spacer"
+            },
+            {
+              "id": "perm-view-title",
+              "type": "header",
+              "text": "已授予的权限"
+            },
+            {
+              "id": "perm-list",
+              "type": "each",
+              "source": "data.view.permissions",
+              "as": "perm",
+              "template": [
+                {
+                  "id": "sp-perm-line",
+                  "type": "spacer",
+                  "visibleWhen": {
+                    "ref": "perm.granted"
+                  }
+                },
+                {
+                  "id": "perm-line",
+                  "type": "text",
+                  "text": "· {{perm.description}}",
+                  "visibleWhen": {
+                    "ref": "perm.granted"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "edit-role",
+          "type": "when",
+          "condition": {
+            "ref": "data.view.caps.roles"
+          },
+          "content": [
+            {
+              "id": "sp-d-edit",
+              "type": "spacer"
+            },
+            {
+              "id": "d-edit",
+              "type": "divider"
+            },
+            {
+              "id": "sp-edit-title",
+              "type": "spacer"
+            },
+            {
+              "id": "edit-title",
+              "type": "header",
+              "text": "修改角色"
+            },
+            {
+              "id": "sp-new-name",
+              "type": "spacer"
+            },
+            {
+              "id": "new-name",
+              "type": "textField",
+              "label": "新名称",
+              "bind": "state.newName",
+              "placeholder": "{{data.view.role.name}}"
+            },
+            {
+              "id": "sp-rename",
+              "type": "spacer"
+            },
+            {
+              "id": "rename",
+              "type": "button",
+              "label": "改名",
+              "trigger": {
+                "type": "action",
+                "action": "rename"
+              }
+            },
+            {
+              "id": "sp-description-input",
+              "type": "spacer"
+            },
+            {
+              "id": "description-input",
+              "type": "textField",
+              "label": "说明",
+              "bind": "state.description",
+              "placeholder": "{{data.view.role.description}}"
+            },
+            {
+              "id": "sp-describe",
+              "type": "spacer"
+            },
+            {
+              "id": "describe",
+              "type": "button",
+              "label": "更新说明",
+              "trigger": {
+                "type": "action",
+                "action": "describe"
+              }
+            },
+            {
+              "id": "deletable",
+              "type": "when",
+              "condition": {
+                "op": "not",
+                "args": [
+                  {
+                    "ref": "data.view.role.reserved"
+                  }
+                ]
+              },
+              "content": [
+                {
+                  "id": "sp-replacement",
+                  "type": "spacer"
+                },
+                {
+                  "id": "replacement",
+                  "type": "dropdown",
+                  "label": "删除后由哪个角色接替（有人使用时生效）",
+                  "bind": "state.replacementId",
+                  "options": {
+                    "source": "data.view.replacements",
+                    "as": "r",
+                    "value": "{{r.id}}",
+                    "label": "{{r.name}}"
+                  }
+                },
+                {
+                  "id": "sp-delete",
+                  "type": "spacer"
+                },
+                {
+                  "id": "delete",
+                  "type": "button",
+                  "label": "删除角色",
+                  "tone": "danger",
+                  "trigger": {
+                    "type": "action",
+                    "action": "delete"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "sp-d-end",
+          "type": "spacer"
+        },
+        {
+          "id": "d-end",
+          "type": "divider"
+        },
+        {
+          "id": "sp-back",
+          "type": "spacer"
+        },
+        {
+          "id": "back",
+          "type": "button",
+          "label": "返回",
+          "trigger": {
+            "type": "back"
+          }
+        }
+      ]
+    },
+    {
+      "id": "missing",
+      "type": "when",
+      "condition": {
+        "op": "not",
+        "args": [
+          {
+            "ref": "data.view"
+          }
+        ]
+      },
+      "content": [
+        {
+          "id": "sp-missing-tip",
+          "type": "spacer"
+        },
+        {
+          "id": "missing-tip",
+          "type": "info",
+          "items": [
+            "读取失败：领地可能已被删除或改名，也可能数据仍在加载。"
+          ],
+          "tone": "warning"
+        },
+        {
+          "id": "sp-missing-back",
+          "type": "spacer"
+        },
+        {
+          "id": "missing-back",
+          "type": "button",
+          "label": "返回",
+          "trigger": {
+            "type": "back"
+          }
+        }
+      ]
+    }
+  ],
+  "actions": {
+    "setPermission": {
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "toggle": {
+            "on": "role_grant",
+            "off": "role_revoke"
+          },
+          "value": false,
+          "args": []
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "refresh"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        },
+        {
+          "effect": "refresh"
+        }
+      ]
+    },
+    "rename": {
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "role_rename",
+          "args": [
+            "{{data.view.land.name}}",
+            "{{data.view.role.name}}",
+            "{{state.newName}}"
+          ]
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "setState",
+          "values": {
+            "newName": ""
+          }
+        },
+        {
+          "effect": "refresh"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    },
+    "describe": {
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "role_describe",
+          "args": [
+            "{{data.view.land.name}}",
+            "{{data.view.role.name}}",
+            "{{state.description}}"
+          ]
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "refresh"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    },
+    "delete": {
+      "confirm": {
+        "title": "删除角色",
+        "body": "删除角色「{{data.view.role.name}}」？正在使用它的成员和区域授权会改用所选的接替角色。",
+        "confirmText": "删除",
+        "danger": true
+      },
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "role_delete",
+          "args": [
+            "{{data.view.land.name}}",
+            "{{data.view.role.name}}",
+            "{{state.replacementId}}",
+            "confirm"
+          ]
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "back"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    }
+  }
+}

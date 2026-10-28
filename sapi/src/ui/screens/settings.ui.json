@@ -1,0 +1,556 @@
+{
+  "$schema": "https://cdn.jsdelivr.net/gh/DogeLakeDev/ScriptsForMinecraftServer@main/modules/sdk/@sfmc-sdk/schemas/ui-screen.v1.schema.json",
+  "formatVersion": 1,
+  "id": "land.settings",
+  "name": "land.settings",
+  "presentation": "form",
+  "title": "领地设置",
+  "params": {
+    "landId": {
+      "type": "string",
+      "required": true
+    }
+  },
+  "state": {
+    "newName": {
+      "type": "string",
+      "default": "",
+      "maxLength": 32
+    },
+    "description": {
+      "type": "string",
+      "default": "",
+      "maxLength": 200
+    },
+    "metaKey": {
+      "type": "string",
+      "default": ""
+    },
+    "metaValue": {
+      "type": "string",
+      "default": ""
+    },
+    "transferTarget": {
+      "type": "string",
+      "default": ""
+    }
+  },
+  "load": {
+    "view": {
+      "service": "land.ui.detail",
+      "input": {
+        "playerId": "{{player.id}}",
+        "landId": "{{params.landId}}"
+      }
+    }
+  },
+  "body": [
+    {
+      "id": "ready",
+      "type": "when",
+      "condition": {
+        "ref": "data.view"
+      },
+      "content": [
+        {
+          "id": "sp-name",
+          "type": "spacer"
+        },
+        {
+          "id": "name",
+          "type": "header",
+          "text": "{{data.view.land.name}} · 设置"
+        },
+        {
+          "id": "manage",
+          "type": "when",
+          "condition": {
+            "ref": "data.view.caps.manage"
+          },
+          "content": [
+            {
+              "id": "sp-new-name",
+              "type": "spacer"
+            },
+            {
+              "id": "new-name",
+              "type": "textField",
+              "label": "新名称",
+              "bind": "state.newName",
+              "placeholder": "{{data.view.land.name}}"
+            },
+            {
+              "id": "sp-rename",
+              "type": "spacer"
+            },
+            {
+              "id": "rename",
+              "type": "button",
+              "label": "改名",
+              "trigger": {
+                "type": "action",
+                "action": "rename"
+              }
+            },
+            {
+              "id": "sp-description",
+              "type": "spacer"
+            },
+            {
+              "id": "description",
+              "type": "textField",
+              "label": "简介",
+              "bind": "state.description",
+              "placeholder": "{{data.view.land.description}}"
+            },
+            {
+              "id": "sp-describe",
+              "type": "spacer"
+            },
+            {
+              "id": "describe",
+              "type": "button",
+              "label": "更新简介",
+              "trigger": {
+                "type": "action",
+                "action": "describe"
+              }
+            },
+            {
+              "id": "sp-d-spawn",
+              "type": "spacer"
+            },
+            {
+              "id": "d-spawn",
+              "type": "divider"
+            },
+            {
+              "id": "sp-spawn-set",
+              "type": "spacer"
+            },
+            {
+              "id": "spawn-set",
+              "type": "button",
+              "label": "把出生点设为脚下",
+              "trigger": {
+                "type": "action",
+                "action": "spawnSet"
+              }
+            },
+            {
+              "id": "sp-spawn-reset",
+              "type": "spacer"
+            },
+            {
+              "id": "spawn-reset",
+              "type": "button",
+              "label": "出生点移回已占领区块中心",
+              "trigger": {
+                "type": "action",
+                "action": "spawnReset"
+              }
+            },
+            {
+              "id": "sp-d-meta",
+              "type": "spacer"
+            },
+            {
+              "id": "d-meta",
+              "type": "divider"
+            },
+            {
+              "id": "sp-meta-key",
+              "type": "spacer"
+            },
+            {
+              "id": "meta-key",
+              "type": "textField",
+              "label": "扩展数据键",
+              "bind": "state.metaKey"
+            },
+            {
+              "id": "sp-meta-value",
+              "type": "spacer"
+            },
+            {
+              "id": "meta-value",
+              "type": "textField",
+              "label": "扩展数据值",
+              "bind": "state.metaValue"
+            },
+            {
+              "id": "sp-meta",
+              "type": "spacer"
+            },
+            {
+              "id": "meta",
+              "type": "button",
+              "label": "写入扩展数据",
+              "trigger": {
+                "type": "action",
+                "action": "meta"
+              }
+            }
+          ]
+        },
+        {
+          "id": "owner",
+          "type": "when",
+          "condition": {
+            "ref": "data.view.caps.transfer"
+          },
+          "content": [
+            {
+              "id": "sp-d-danger",
+              "type": "spacer"
+            },
+            {
+              "id": "d-danger",
+              "type": "divider"
+            },
+            {
+              "id": "sp-danger-title",
+              "type": "spacer"
+            },
+            {
+              "id": "danger-title",
+              "type": "header",
+              "text": "危险操作",
+              "tone": "danger"
+            },
+            {
+              "id": "sp-transfer-target",
+              "type": "spacer"
+            },
+            {
+              "id": "transfer-target",
+              "type": "textField",
+              "label": "接收者（玩家名）",
+              "bind": "state.transferTarget"
+            },
+            {
+              "id": "sp-transfer",
+              "type": "spacer"
+            },
+            {
+              "id": "transfer",
+              "type": "button",
+              "label": "转让领地",
+              "tone": "danger",
+              "trigger": {
+                "type": "action",
+                "action": "transfer"
+              }
+            },
+            {
+              "id": "sp-delete",
+              "type": "spacer"
+            },
+            {
+              "id": "delete",
+              "type": "button",
+              "label": "删除领地",
+              "tone": "danger",
+              "trigger": {
+                "type": "action",
+                "action": "delete"
+              }
+            }
+          ]
+        },
+        {
+          "id": "sp-d-end",
+          "type": "spacer"
+        },
+        {
+          "id": "d-end",
+          "type": "divider"
+        },
+        {
+          "id": "sp-back",
+          "type": "spacer"
+        },
+        {
+          "id": "back",
+          "type": "button",
+          "label": "返回",
+          "trigger": {
+            "type": "back"
+          }
+        }
+      ]
+    },
+    {
+      "id": "missing",
+      "type": "when",
+      "condition": {
+        "op": "not",
+        "args": [
+          {
+            "ref": "data.view"
+          }
+        ]
+      },
+      "content": [
+        {
+          "id": "sp-missing-tip",
+          "type": "spacer"
+        },
+        {
+          "id": "missing-tip",
+          "type": "info",
+          "items": [
+            "读取失败：领地可能已被删除或改名，也可能数据仍在加载。"
+          ],
+          "tone": "warning"
+        },
+        {
+          "id": "sp-missing-back",
+          "type": "spacer"
+        },
+        {
+          "id": "missing-back",
+          "type": "button",
+          "label": "返回",
+          "trigger": {
+            "type": "back"
+          }
+        }
+      ]
+    }
+  ],
+  "actions": {
+    "rename": {
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "rename",
+          "args": [
+            "{{data.view.land.name}}",
+            "{{state.newName}}"
+          ]
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "setState",
+          "values": {
+            "newName": ""
+          }
+        },
+        {
+          "effect": "refresh"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    },
+    "describe": {
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "describe",
+          "args": [
+            "{{data.view.land.name}}",
+            "{{state.description}}"
+          ]
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "refresh"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    },
+    "spawnSet": {
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "spawn_set",
+          "args": [
+            "{{data.view.land.name}}"
+          ]
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "refresh"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    },
+    "spawnReset": {
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "spawn_reset",
+          "args": [
+            "{{data.view.land.name}}"
+          ]
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "refresh"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    },
+    "meta": {
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "meta",
+          "args": [
+            "{{data.view.land.name}}",
+            "{{state.metaKey}}",
+            "{{state.metaValue}}"
+          ]
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "refresh"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    },
+    "transfer": {
+      "confirm": {
+        "title": "转让领地",
+        "body": "把「{{data.view.land.name}}」转让给 {{state.transferTarget}}？银行和租约随领地一起转移，你将失去领主身份。请输入领地名确认。",
+        "confirmText": "确认转让",
+        "danger": true,
+        "challenge": "{{data.view.land.name}}"
+      },
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "transfer",
+          "args": [
+            "{{data.view.land.name}}",
+            "{{state.transferTarget}}",
+            "confirm"
+          ]
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "replace",
+          "to": "land.home"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    },
+    "delete": {
+      "confirm": {
+        "title": "删除领地",
+        "body": "删除「{{data.view.land.name}}」？区块、子区域、成员和角色都会被删除，无法恢复。请输入领地名确认。",
+        "confirmText": "确认删除",
+        "danger": true,
+        "challenge": "{{data.view.land.name}}"
+      },
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "delete",
+          "args": [
+            "{{data.view.land.name}}",
+            "confirm"
+          ]
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "replace",
+          "to": "land.home"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    }
+  }
+}

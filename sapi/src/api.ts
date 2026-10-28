@@ -77,10 +77,21 @@ async function guard(handler: (input: unknown) => Promise<unknown>, input: unkno
   try {
     return await handler(input);
   } catch (error) {
-    const wrapped = asLandError(error);
-    const status = FORBIDDEN_KEYS.has(wrapped.key) ? 403 : wrapped.key.endsWith("not_found") ? 404 : wrapped.key === "internal" ? 500 : 409;
-    throw new ServiceError(renderMessage("zh", wrapped.key, wrapped.vars, {}), wrapped.key, status);
+    throw landServiceError(error);
   }
+}
+
+/**
+ * 把任意错误映射为带稳定错误键与状态码的服务错误。render 决定给调用方看的文本，默认中文目录文案。
+ * 使用场景：公开 API 的 guard；领地界面服务（ui-services）按玩家语言渲染后回传给表单。
+ */
+export function landServiceError(
+  error: unknown,
+  render: (wrapped: LandError) => string = (wrapped) => renderMessage("zh", wrapped.key, wrapped.vars, {}),
+): ServiceError {
+  const wrapped = asLandError(error);
+  const status = FORBIDDEN_KEYS.has(wrapped.key) ? 403 : wrapped.key.endsWith("not_found") ? 404 : wrapped.key === "internal" ? 500 : 409;
+  return new ServiceError(render(wrapped), wrapped.key, status);
 }
 
 function record(input: unknown): Record<string, unknown> {

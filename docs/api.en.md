@@ -30,6 +30,8 @@ Use the platform-bound `ServiceClient` after module initialization and Land avai
 
 Command confirmation tokens are not API inputs. Delete and role-delete calls execute after domain checks; consumers own their user confirmation flow.
 
+`land.ui.*` are internal services of this module's land menu (screen data sources plus `land.ui.exec` for running subcommands). Their `playerId` must be an online player, their shapes follow the screens, and they are not public API; other modules should not declare or call them.
+
 ## Shared types and inputs
 
 `?` means optional. Identifiers/names are strings unless specified otherwise. Writes accept a land name or ID in land, taking precedence over landId; supply one. Supported role/area parameters accept names or IDs. Prefer stable IDs.
@@ -219,8 +221,10 @@ Some callbacks are awaited inside the write queue. Do not await another Land wri
 | Event | Main payload fields |
 | --- | --- |
 | land.created | `actorId, actorName, landId, name` |
-| land.deleted | `actorId, landId, name` |
+| land.deleted | `actorId, landId, name`; deletions caused by a merge also carry `mergedInto` (the target land ID) |
 | land.claimed / land.unclaimed | `actorId, landId, count` |
+| land.merged | `actorId, landId, sourceIds, chunks, level` |
+| land.level.changed | `actorId, landId, from, level, reason:"merge"\|"relevel"` (admin merge or relevel, bypassing the bank upgrade flow) |
 | land.area.changed | `actorId, landId, areaId, op:"create"\|"resize"\|"delete"` |
 | land.transferred | `actorId, landId, to` |
 | land.member.changed | `landId, playerId` plus operation-dependent fields |

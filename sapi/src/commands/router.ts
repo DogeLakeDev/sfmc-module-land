@@ -13,9 +13,10 @@ import { LandError } from "../domain/errors.js";
 import type { Actor } from "../domain/model.js";
 import { phrase, say, sayError } from "../messages/speak.js";
 import { openTransactions, diagnose, repair, setAdminBypass } from "../services/admin.js";
+import { mergeLands, planMerge, planPrune, planRelevel, pruneAreas, relevelLands } from "../services/consolidate.js";
 import { bankBalance, deposit, payUpkeep, setTax, upgradeLand, upkeepAmount, withdraw } from "../services/finance.js";
 import { nextLevelRule } from "../config.js";
-import { builtinQuota } from "../services/quota.js";
+import { builtinQuota, isUnlimited } from "../services/quota.js";
 import {
   buy,
   cancelListing,
@@ -44,7 +45,7 @@ import {
   untrust,
 } from "../services/people.js";
 import { decide, resolveFlag, resolveRole } from "../services/permission.js";
-import { bindLegacy, bindLegacyOnJoin, findLegacy, legacyIdentities } from "../services/legacy.js";
+import { bindLegacy, bindLegacyOnJoin, findLegacy, legacyOverview } from "../services/legacy.js";
 import { holds } from "../services/shared.js";
 import { setFlag } from "../services/flags.js";
 import {
@@ -153,17 +154,44 @@ export const LAND_ACTIONS = [
   "admin_tx",
   "admin_legacy",
   "admin_legacy_bind",
+  "admin_merge",
+  "admin_area_prune",
+  "admin_relevel",
 ] as const;
 
-const selection = new Map<string, { dimensionId?: string; pos1?: { x: number; y: number; z: number }; pos2?: { x: number; y: number; z: number } }>();
+/** 玩家用 area_pos1 / area_pos2 记下的选区。键为玩家 ID，只存在内存里。 */
+export interface LandSelection {
+  dimensionId?: string;
+  pos1?: { x: number; y: number; z: number };
+  pos2?: { x: number; y: number; z: number };
+}
 
-function actorOf(player: Player | undefined): Actor {
+const selection = new Map<string, LandSelection>();
+
+/**
+ * 读取玩家当前选区的副本，未选过时返回空对象。
+ * 使用场景：领地界面（区块页、区域页）展示 pos1/pos2 与是否可以按选区操作。
+ */
+export function selectionOf(playerId: string): LandSelection {
+  const picked = selection.get(playerId);
+  return picked ? { ...picked } : {};
+}
+
+/**
+ * 把执行命令的玩家转换成领域操作者；没有玩家时视为控制台。
+ * 使用场景：命令分派与领地界面服务（land.ui.*）共用同一套操作者口径。
+ */
+export function actorOf(player: Player | undefined): Actor {
   if (!player) return { id: "console", name: "console", admin: true, console: true };
   return { id: player.id, name: player.name, admin: Permission.check(player, "land.admin"), console: false };
 }
 
-function words(args: unknown[]): string[] {
-  return args.filter((arg) => arg !== undefined && String(arg).length > 0).map((arg) => String(arg));
+/**
+ * 去掉未填写的参数并统一转成字符串。
+ * 使用场景：原生命令的可选参数；领地界面传入的参数数组（空输入框同样被忽略）。
+ */
+export function words(args: unknown[]): string[] {
+  return args.filter((arg) => arg !== undefined && arg !== null && String(arg).length > 0).map((arg) => String(arg));
 }
 
 function confirmed(args: string[], command: string): string[] {
@@ -194,19 +222,28 @@ function currentLand(player: Player, token?: string) {
 export async function runLandCommand(player: Player | undefined, action: unknown, ...rest: unknown[]): Promise<void> {
   const name = typeof action === "string" ? action : "help";
   try {
-    if (player) await rememberPlayer(player);
-    // 进服时绑定可能因索引未就绪而跳过，执行领地命令时再补一次
-    if (player) {
-      const bound = await bindLegacyOnJoin({ id: player.id, name: player.name });
-      if (bound > 0) say(player, "legacy_bound", { count: bound }, "success");
-    }
-    if (name.startsWith("admin_") && player && !Permission.check(player, "land.admin")) {
-      throw new LandError("no_permission", { reason: "land.admin" });
-    }
-    await dispatch(player, actorOf(player), name, words(rest));
+    await execLandCommand(player, name, words(rest));
   } catch (error) {
     sayError(player, error);
   }
+}
+
+/**
+ * 执行一条领地子命令，失败时把领域错误抛给调用方而不是发到聊天栏。
+ * 使用场景：runLandCommand（聊天命令，捕获后 sayError）与 land.ui.exec（领地界面，错误回传到表单）共用，
+ * 保证两条入口的校验、权限和提示完全一致。args 需已经过 words 清洗。
+ */
+export async function execLandCommand(player: Player | undefined, name: string, args: string[]): Promise<void> {
+  if (player) await rememberPlayer(player);
+  // 进服时绑定可能因索引未就绪而跳过，执行领地命令时再补一次
+  if (player) {
+    const bound = await bindLegacyOnJoin({ id: player.id, name: player.name });
+    if (bound > 0) say(player, "legacy_bound", { count: bound }, "success");
+  }
+  if (name.startsWith("admin_") && player && !Permission.check(player, "land.admin")) {
+    throw new LandError("no_permission", { reason: "land.admin" });
+  }
+  await dispatch(player, actorOf(player), name, args);
 }
 
 async function dispatch(player: Player | undefined, actor: Actor, action: string, args: string[]): Promise<void> {
@@ -217,6 +254,7 @@ async function dispatch(player: Player | undefined, actor: Actor, action: string
       say(player, "help_area", {}, "tips");
       say(player, "help_people", {}, "tips");
       say(player, "help_money", {}, "tips");
+      if (player) say(player, "help_gui", {}, "tips");
       return;
     case "create": {
       if (!player) throw new LandError("need_player");
@@ -270,26 +308,7 @@ async function dispatch(player: Player | undefined, actor: Actor, action: string
     case "map":
     case "near": {
       if (!player) throw new LandError("need_player");
-      const origin = chunkOf(player.dimension.id, player.location.x, player.location.z);
-      const standingLandId = currentOptional(player);
-      // 四种格子符号来自文案表（同一字形不同颜色），中心格固定标记玩家位置
-      const cell = {
-        self: phrase(player, "map_cell_self"),
-        here: phrase(player, "map_cell_here"),
-        other: phrase(player, "map_cell_other"),
-        wild: phrase(player, "map_cell_wild"),
-      };
-      const lines: string[] = [];
-      for (let dz = -3; dz <= 3; dz += 1) {
-        const row: string[] = [];
-        for (let dx = -3; dx <= 3; dx += 1) {
-          const key = claimKey(origin.dimensionId, origin.chunkX + dx, origin.chunkZ + dz);
-          const landId = landWorld().claims.get(key);
-          if (dx === 0 && dz === 0) row.push(cell.self);
-          else row.push(!landId ? cell.wild : landId === standingLandId ? cell.here : cell.other);
-        }
-        lines.push(phrase(player, "map_line", { line: row.join(" ") }));
-      }
+      const lines = nearbyMapLines(player);
       // 标题与地图行合并为一条多行消息：只有首行带 [*] 前缀，地图行左侧对齐
       say(player, "map_title", { rows: `\n${lines.join("\n")}` }, "info");
       return;
@@ -411,13 +430,11 @@ async function dispatch(player: Player | undefined, actor: Actor, action: string
     }
     case "admin_legacy": {
       // 列出尚未绑定的旧服身份（最多 20 条），可用名字或 XUID 过滤
-      const filter = args[0]?.toLowerCase() ?? "";
-      const rows = legacyIdentities().filter((item) => !filter || item.playerId.toLowerCase().includes(filter) || item.playerName.toLowerCase().includes(filter));
-      if (rows.length === 0) say(player, "legacy_none", {}, "tips");
-      say(player, "legacy_total", { count: rows.length }, "info");
-      for (const item of rows.slice(0, 20)) {
-        const lands = [...landWorld().lands.values()].filter((land) => land.ownerId === item.playerId).length;
-        say(player, "legacy_line", { name: item.playerName, id: item.playerId, lands }, "info");
+      const overview = legacyOverview(args[0] ?? "");
+      if (overview.total === 0) say(player, "legacy_none", {}, "tips");
+      say(player, "legacy_total", { count: overview.total }, "info");
+      for (const item of overview.rows) {
+        say(player, "legacy_line", { name: item.playerName, id: item.playerId, lands: item.lands }, "info");
       }
       return;
     }
@@ -429,9 +446,77 @@ async function dispatch(player: Player | undefined, actor: Actor, action: string
       say(player, "legacy_bound_admin", { legacy: `${legacy.playerName}(${legacy.playerId})`, player: target.name, count }, "success");
       return;
     }
+    case "admin_merge":
+    case "admin_area_prune":
+    case "admin_relevel":
+      await maintenanceCommand(player, actor, action, args);
+      return;
     default:
       throw new LandError("unknown_command");
   }
+}
+
+/** 预览消息里最多列出的领地名数量，其余以“等 N 块”概括，避免一条消息过长。 */
+const PREVIEW_NAMES = 5;
+
+/** 把一组名称压成预览用的短文本。使用场景：合并与等级重排的预览消息。 */
+function previewList(names: string[]): string {
+  const shown = names.slice(0, PREVIEW_NAMES).join("、");
+  return names.length > PREVIEW_NAMES ? `${shown} 等 ${names.length} 块` : shown;
+}
+
+/**
+ * 管理员维护命令：admin_merge、admin_area_prune、admin_relevel。
+ * 末尾不带 confirm 时只发预览和确认提示；带 confirm 时执行（服务内部在写锁中重新生成计划）。
+ */
+async function maintenanceCommand(player: Player | undefined, actor: Actor, action: string, args: string[]): Promise<void> {
+  const execute = args[args.length - 1] === "confirm";
+  const body = execute ? args.slice(0, -1) : args;
+  if (action === "admin_merge") {
+    const [target, source] = [need(body, 0), need(body, 1)];
+    const plan = execute ? await mergeLands(actor, target, source) : await planMerge(actor, target, source);
+    const vars = { count: plan.sources.length, target: plan.target.name, chunks: plan.chunks, level: plan.level };
+    if (execute) {
+      say(player, "merged", vars, "success");
+      return;
+    }
+    say(player, "merge_preview", {
+      ...vars,
+      names: previewList(plan.sources.map((land) => land.name)),
+      areas: plan.areas.length,
+      grants: plan.newAreaRoles.length,
+      dropped: plan.droppedMembers.length,
+      flags: plan.droppedFlags,
+    }, "warning");
+    say(player, "need_confirm", { command: `/c:land admin_merge ${target} ${source} confirm` }, "tips");
+    return;
+  }
+  if (action === "admin_area_prune") {
+    const [land, prefix] = [need(body, 0), need(body, 1)];
+    const plan = execute ? await pruneAreas(actor, land, prefix) : planPrune(actor, land, prefix);
+    if (execute) {
+      say(player, "pruned", { land: plan.land.name, count: plan.removable.length }, "success");
+      return;
+    }
+    say(player, "prune_preview", { land: plan.land.name, prefix, count: plan.removable.length, kept: plan.kept.length }, "warning");
+    say(player, "need_confirm", { command: `/c:land admin_area_prune ${land} ${prefix} confirm` }, "tips");
+    return;
+  }
+  const scope = body[0];
+  const changes = execute ? await relevelLands(actor, scope) : planRelevel(actor, scope);
+  if (changes.length === 0) {
+    say(player, "relevel_none", {}, "tips");
+    return;
+  }
+  if (execute) {
+    say(player, "releveled", { count: changes.length }, "success");
+    return;
+  }
+  say(player, "relevel_preview", {
+    count: changes.length,
+    sample: previewList(changes.map((change) => `${change.land.name} ${change.from}→${change.to}`)),
+  }, "warning");
+  say(player, "need_confirm", { command: `/c:land admin_relevel ${scope ? `${scope} ` : ""}confirm` }, "tips");
 }
 
 /** area_member 中表示“所有非成员”的写法。 */
@@ -454,6 +539,34 @@ function need(args: string[], index: number): string {
 
 function currentOptional(player: Player): string {
   return landWorld().locate(player.dimension.id, player.location.x, player.location.y, player.location.z)?.land.id ?? "";
+}
+
+/**
+ * 以玩家所在区块为中心的 7×7 附近区块图，每个元素是一行已渲染的文字。
+ * 使用场景：map / near 命令拼成聊天消息；领地界面的“附近地图”页直接逐行展示。
+ */
+export function nearbyMapLines(player: Player): string[] {
+  const origin = chunkOf(player.dimension.id, player.location.x, player.location.z);
+  const standingLandId = currentOptional(player);
+  // 四种格子符号来自文案表（同一字形不同颜色），中心格固定标记玩家位置
+  const cell = {
+    self: phrase(player, "map_cell_self"),
+    here: phrase(player, "map_cell_here"),
+    other: phrase(player, "map_cell_other"),
+    wild: phrase(player, "map_cell_wild"),
+  };
+  const lines: string[] = [];
+  for (let dz = -3; dz <= 3; dz += 1) {
+    const row: string[] = [];
+    for (let dx = -3; dx <= 3; dx += 1) {
+      const key = claimKey(origin.dimensionId, origin.chunkX + dx, origin.chunkZ + dz);
+      const landId = landWorld().claims.get(key);
+      if (dx === 0 && dz === 0) row.push(cell.self);
+      else row.push(!landId ? cell.wild : landId === standingLandId ? cell.here : cell.other);
+    }
+    lines.push(phrase(player, "map_line", { line: row.join(" ") }));
+  }
+  return lines;
 }
 
 function selectionBox(player: Player): {
@@ -527,7 +640,8 @@ async function growthCommand(player: Player | undefined, actor: Actor, action: s
   if (action === "quota") {
     for (const id of ["lands", "chunks", "members", "areas", "roles"] as const) {
       const view = builtinQuota(landConfig(), landWorld(), actor, id === "lands" ? undefined : land, id, (permission) => holds(actor, permission));
-      say(player, "quota_line", { label: id, used: view.used, limit: view.limit }, "info");
+      const limit = isUnlimited(view.limit) ? phrase(player, "unlimited") : view.limit;
+      say(player, "quota_line", { label: id, used: view.used, limit }, "info");
     }
     return;
   }

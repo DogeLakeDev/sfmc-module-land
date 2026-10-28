@@ -1,0 +1,346 @@
+{
+  "$schema": "https://cdn.jsdelivr.net/gh/DogeLakeDev/ScriptsForMinecraftServer@main/modules/sdk/@sfmc-sdk/schemas/ui-screen.v1.schema.json",
+  "formatVersion": 1,
+  "id": "land.areas",
+  "name": "land.areas",
+  "presentation": "form",
+  "title": "子区域",
+  "params": {
+    "landId": {
+      "type": "string",
+      "required": true
+    }
+  },
+  "state": {
+    "name": {
+      "type": "string",
+      "default": "",
+      "maxLength": 32
+    }
+  },
+  "load": {
+    "view": {
+      "service": "land.ui.areas",
+      "input": {
+        "playerId": "{{player.id}}",
+        "landId": "{{params.landId}}"
+      }
+    }
+  },
+  "body": [
+    {
+      "id": "ready",
+      "type": "when",
+      "condition": {
+        "ref": "data.view"
+      },
+      "content": [
+        {
+          "id": "sp-title",
+          "type": "spacer"
+        },
+        {
+          "id": "title",
+          "type": "header",
+          "text": "{{data.view.land.name}} · 子区域"
+        },
+        {
+          "id": "areas",
+          "type": "each",
+          "source": "data.view.areas",
+          "as": "area",
+          "template": [
+            {
+              "id": "sp-area-open",
+              "type": "spacer"
+            },
+            {
+              "id": "area-open",
+              "type": "button",
+              "label": "{{area.name}}",
+              "description": "{{area.boxText}}",
+              "trigger": {
+                "type": "navigate",
+                "to": "land.area",
+                "params": {
+                  "landId": "{{params.landId}}",
+                  "areaId": "{{area.id}}"
+                }
+              }
+            }
+          ],
+          "empty": [
+            {
+              "id": "sp-areas-empty",
+              "type": "spacer"
+            },
+            {
+              "id": "areas-empty",
+              "type": "info",
+              "items": [
+                "还没有子区域。"
+              ],
+              "tone": "muted"
+            }
+          ]
+        },
+        {
+          "id": "create-block",
+          "type": "when",
+          "condition": {
+            "ref": "data.view.caps.areas"
+          },
+          "content": [
+            {
+              "id": "sp-d-create",
+              "type": "spacer"
+            },
+            {
+              "id": "d-create",
+              "type": "divider"
+            },
+            {
+              "id": "sp-create-title",
+              "type": "spacer"
+            },
+            {
+              "id": "create-title",
+              "type": "header",
+              "text": "新建子区域"
+            },
+            {
+              "id": "sp-create-tip",
+              "type": "spacer"
+            },
+            {
+              "id": "create-tip",
+              "type": "info",
+              "items": [
+                "先站到长方体的两个对角，分别记录点 1、点 2，再填写名称创建。"
+              ],
+              "tone": "muted"
+            },
+            {
+              "id": "sp-sel",
+              "type": "spacer"
+            },
+            {
+              "id": "sel",
+              "type": "info",
+              "items": [
+                "点 1：{{data.view.selection.pos1Text}}",
+                "点 2：{{data.view.selection.pos2Text}}"
+              ]
+            },
+            {
+              "id": "sp-pos1",
+              "type": "spacer"
+            },
+            {
+              "id": "pos1",
+              "type": "button",
+              "label": "把脚下设为点 1",
+              "trigger": {
+                "type": "action",
+                "action": "pos1"
+              }
+            },
+            {
+              "id": "sp-pos2",
+              "type": "spacer"
+            },
+            {
+              "id": "pos2",
+              "type": "button",
+              "label": "把脚下设为点 2",
+              "trigger": {
+                "type": "action",
+                "action": "pos2"
+              }
+            },
+            {
+              "id": "sp-name",
+              "type": "spacer"
+            },
+            {
+              "id": "name",
+              "type": "textField",
+              "label": "区域名称",
+              "bind": "state.name"
+            },
+            {
+              "id": "sp-create",
+              "type": "spacer",
+              "visibleWhen": {
+                "ref": "data.view.selection.ready"
+              }
+            },
+            {
+              "id": "create",
+              "type": "button",
+              "label": "按选区创建",
+              "tone": "primary",
+              "visibleWhen": {
+                "ref": "data.view.selection.ready"
+              },
+              "trigger": {
+                "type": "action",
+                "action": "create"
+              }
+            }
+          ]
+        },
+        {
+          "id": "sp-d-end",
+          "type": "spacer"
+        },
+        {
+          "id": "d-end",
+          "type": "divider"
+        },
+        {
+          "id": "sp-back",
+          "type": "spacer"
+        },
+        {
+          "id": "back",
+          "type": "button",
+          "label": "返回",
+          "trigger": {
+            "type": "back"
+          }
+        }
+      ]
+    },
+    {
+      "id": "missing",
+      "type": "when",
+      "condition": {
+        "op": "not",
+        "args": [
+          {
+            "ref": "data.view"
+          }
+        ]
+      },
+      "content": [
+        {
+          "id": "sp-missing-tip",
+          "type": "spacer"
+        },
+        {
+          "id": "missing-tip",
+          "type": "info",
+          "items": [
+            "读取失败：领地可能已被删除或改名，也可能数据仍在加载。"
+          ],
+          "tone": "warning"
+        },
+        {
+          "id": "sp-missing-back",
+          "type": "spacer"
+        },
+        {
+          "id": "missing-back",
+          "type": "button",
+          "label": "返回",
+          "trigger": {
+            "type": "back"
+          }
+        }
+      ]
+    }
+  ],
+  "actions": {
+    "pos1": {
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "area_pos1",
+          "args": []
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "refresh"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    },
+    "pos2": {
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "area_pos2",
+          "args": []
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "refresh"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    },
+    "create": {
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "area_create",
+          "args": [
+            "{{data.view.land.name}}",
+            "{{state.name}}"
+          ]
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "setState",
+          "values": {
+            "name": ""
+          }
+        },
+        {
+          "effect": "refresh"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    }
+  }
+}

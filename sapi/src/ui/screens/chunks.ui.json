@@ -1,0 +1,636 @@
+{
+  "$schema": "https://cdn.jsdelivr.net/gh/DogeLakeDev/ScriptsForMinecraftServer@main/modules/sdk/@sfmc-sdk/schemas/ui-screen.v1.schema.json",
+  "formatVersion": 1,
+  "id": "land.chunks",
+  "name": "land.chunks",
+  "presentation": "form",
+  "title": "区块与选区",
+  "state": {
+    "target": {
+      "type": "string",
+      "default": ""
+    },
+    "rectTarget": {
+      "type": "string",
+      "default": ""
+    }
+  },
+  "load": {
+    "view": {
+      "service": "land.ui.chunks",
+      "input": {
+        "playerId": "{{player.id}}"
+      }
+    }
+  },
+  "body": [
+    {
+      "id": "ready",
+      "type": "when",
+      "condition": {
+        "ref": "data.view"
+      },
+      "content": [
+        {
+          "id": "sp-chunk",
+          "type": "spacer"
+        },
+        {
+          "id": "chunk",
+          "type": "info",
+          "items": [
+            "脚下区块：({{data.view.chunk.x}}, {{data.view.chunk.z}}) · {{data.view.chunk.dimensionId}}"
+          ]
+        },
+        {
+          "id": "in-land",
+          "type": "when",
+          "condition": {
+            "ref": "data.view.inLand"
+          },
+          "content": [
+            {
+              "id": "sp-standing",
+              "type": "spacer"
+            },
+            {
+              "id": "standing",
+              "type": "text",
+              "text": "属于「{{data.view.standing.name}}」，领主 {{data.view.standing.ownerName}}"
+            },
+            {
+              "id": "sp-open-land",
+              "type": "spacer"
+            },
+            {
+              "id": "open-land",
+              "type": "button",
+              "label": "查看该领地",
+              "trigger": {
+                "type": "navigate",
+                "to": "land.detail",
+                "params": {
+                  "landId": "{{data.view.standing.id}}"
+                }
+              }
+            },
+            {
+              "id": "sp-unclaim",
+              "type": "spacer",
+              "visibleWhen": {
+                "ref": "data.view.standing.caps.claim"
+              }
+            },
+            {
+              "id": "unclaim",
+              "type": "button",
+              "label": "释放脚下区块",
+              "tone": "danger",
+              "visibleWhen": {
+                "ref": "data.view.standing.caps.claim"
+              },
+              "trigger": {
+                "type": "action",
+                "action": "unclaim"
+              }
+            }
+          ]
+        },
+        {
+          "id": "wild",
+          "type": "when",
+          "condition": {
+            "op": "not",
+            "args": [
+              {
+                "ref": "data.view.inLand"
+              }
+            ]
+          },
+          "content": [
+            {
+              "id": "can-claim",
+              "type": "when",
+              "condition": {
+                "op": "greaterThan",
+                "args": [
+                  {
+                    "ref": "data.view.manageableCount"
+                  },
+                  {
+                    "value": 0
+                  }
+                ]
+              },
+              "content": [
+                {
+                  "id": "sp-target",
+                  "type": "spacer"
+                },
+                {
+                  "id": "target",
+                  "type": "dropdown",
+                  "label": "占领给",
+                  "bind": "state.target",
+                  "options": {
+                    "source": "data.view.manageable",
+                    "as": "land",
+                    "value": "{{land.id}}",
+                    "label": "{{land.name}}"
+                  }
+                },
+                {
+                  "id": "sp-claim",
+                  "type": "spacer"
+                },
+                {
+                  "id": "claim",
+                  "type": "button",
+                  "label": "占领脚下区块",
+                  "tone": "primary",
+                  "trigger": {
+                    "type": "action",
+                    "action": "claim"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "no-land",
+              "type": "when",
+              "condition": {
+                "op": "not",
+                "args": [
+                  {
+                    "op": "greaterThan",
+                    "args": [
+                      {
+                        "ref": "data.view.manageableCount"
+                      },
+                      {
+                        "value": 0
+                      }
+                    ]
+                  }
+                ]
+              },
+              "content": [
+                {
+                  "id": "sp-no-land-tip",
+                  "type": "spacer"
+                },
+                {
+                  "id": "no-land-tip",
+                  "type": "info",
+                  "items": [
+                    "你还没有可以占领区块的领地，先创建一块吧。"
+                  ],
+                  "tone": "muted"
+                },
+                {
+                  "id": "sp-go-create",
+                  "type": "spacer"
+                },
+                {
+                  "id": "go-create",
+                  "type": "button",
+                  "label": "创建领地",
+                  "trigger": {
+                    "type": "navigate",
+                    "to": "land.create"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "sp-d-sel",
+          "type": "spacer"
+        },
+        {
+          "id": "d-sel",
+          "type": "divider"
+        },
+        {
+          "id": "sp-sel-title",
+          "type": "spacer"
+        },
+        {
+          "id": "sel-title",
+          "type": "header",
+          "text": "选区"
+        },
+        {
+          "id": "sp-sel",
+          "type": "spacer"
+        },
+        {
+          "id": "sel",
+          "type": "info",
+          "items": [
+            "点 1：{{data.view.selection.pos1Text}}",
+            "点 2：{{data.view.selection.pos2Text}}"
+          ]
+        },
+        {
+          "id": "sp-pos1",
+          "type": "spacer"
+        },
+        {
+          "id": "pos1",
+          "type": "button",
+          "label": "把脚下设为点 1",
+          "trigger": {
+            "type": "action",
+            "action": "pos1"
+          }
+        },
+        {
+          "id": "sp-pos2",
+          "type": "spacer"
+        },
+        {
+          "id": "pos2",
+          "type": "button",
+          "label": "把脚下设为点 2",
+          "trigger": {
+            "type": "action",
+            "action": "pos2"
+          }
+        },
+        {
+          "id": "rect",
+          "type": "when",
+          "condition": {
+            "op": "and",
+            "args": [
+              {
+                "ref": "data.view.selection.ready"
+              },
+              {
+                "op": "greaterThan",
+                "args": [
+                  {
+                    "ref": "data.view.manageableCount"
+                  },
+                  {
+                    "value": 0
+                  }
+                ]
+              }
+            ]
+          },
+          "content": [
+            {
+              "id": "sp-rect-target",
+              "type": "spacer"
+            },
+            {
+              "id": "rect-target",
+              "type": "dropdown",
+              "label": "批量操作的领地",
+              "bind": "state.rectTarget",
+              "options": {
+                "source": "data.view.manageable",
+                "as": "item",
+                "value": "{{item.id}}",
+                "label": "{{item.name}}"
+              }
+            },
+            {
+              "id": "sp-claim-rect",
+              "type": "spacer"
+            },
+            {
+              "id": "claim-rect",
+              "type": "button",
+              "label": "占领选区覆盖的全部区块",
+              "tone": "primary",
+              "trigger": {
+                "type": "action",
+                "action": "claimRect"
+              }
+            },
+            {
+              "id": "sp-unclaim-rect",
+              "type": "spacer"
+            },
+            {
+              "id": "unclaim-rect",
+              "type": "button",
+              "label": "释放选区内属于该领地的区块",
+              "tone": "danger",
+              "trigger": {
+                "type": "action",
+                "action": "unclaimRect"
+              }
+            }
+          ]
+        },
+        {
+          "id": "sp-d-end",
+          "type": "spacer"
+        },
+        {
+          "id": "d-end",
+          "type": "divider"
+        },
+        {
+          "id": "sp-go-map",
+          "type": "spacer"
+        },
+        {
+          "id": "go-map",
+          "type": "button",
+          "label": "附近地图",
+          "trigger": {
+            "type": "navigate",
+            "to": "land.map"
+          }
+        },
+        {
+          "id": "sp-border-stop",
+          "type": "spacer"
+        },
+        {
+          "id": "border-stop",
+          "type": "button",
+          "label": "关闭边界显示",
+          "trigger": {
+            "type": "action",
+            "action": "borderStop"
+          }
+        },
+        {
+          "id": "sp-back",
+          "type": "spacer"
+        },
+        {
+          "id": "back",
+          "type": "button",
+          "label": "返回",
+          "trigger": {
+            "type": "back"
+          }
+        }
+      ]
+    },
+    {
+      "id": "missing",
+      "type": "when",
+      "condition": {
+        "op": "not",
+        "args": [
+          {
+            "ref": "data.view"
+          }
+        ]
+      },
+      "content": [
+        {
+          "id": "sp-missing-tip",
+          "type": "spacer"
+        },
+        {
+          "id": "missing-tip",
+          "type": "info",
+          "items": [
+            "读取失败：领地可能已被删除或改名，也可能数据仍在加载。"
+          ],
+          "tone": "warning"
+        },
+        {
+          "id": "sp-missing-back",
+          "type": "spacer"
+        },
+        {
+          "id": "missing-back",
+          "type": "button",
+          "label": "返回",
+          "trigger": {
+            "type": "back"
+          }
+        }
+      ]
+    }
+  ],
+  "actions": {
+    "unclaim": {
+      "confirm": {
+        "title": "释放区块",
+        "body": "释放脚下区块，使其不再属于「{{data.view.standing.name}}」？会按服务器配置退还部分费用。",
+        "confirmText": "释放",
+        "danger": true
+      },
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "unclaim",
+          "args": [
+            "{{data.view.standing.name}}",
+            "confirm"
+          ]
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "refresh"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    },
+    "claim": {
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "claim",
+          "args": [
+            "{{state.target}}"
+          ]
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "refresh"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    },
+    "pos1": {
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "area_pos1",
+          "args": []
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "refresh"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    },
+    "pos2": {
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "area_pos2",
+          "args": []
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "refresh"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    },
+    "claimRect": {
+      "confirm": {
+        "title": "批量占领",
+        "body": "占领选区覆盖的全部区块？会按区块数扣除费用。",
+        "confirmText": "占领"
+      },
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "claim_rect",
+          "args": [
+            "{{state.rectTarget}}"
+          ]
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "refresh"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    },
+    "unclaimRect": {
+      "confirm": {
+        "title": "批量释放",
+        "body": "释放选区内属于所选领地的全部区块？",
+        "confirmText": "释放",
+        "danger": true
+      },
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "unclaim_rect",
+          "args": [
+            "{{state.rectTarget}}",
+            "confirm"
+          ]
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "refresh"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    },
+    "borderStop": {
+      "call": {
+        "service": "land.ui.exec",
+        "input": {
+          "playerId": "{{player.id}}",
+          "command": "border_stop",
+          "args": []
+        }
+      },
+      "onSuccess": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "success"
+        },
+        {
+          "effect": "refresh"
+        }
+      ],
+      "onError": [
+        {
+          "effect": "message",
+          "text": "{{result.message}}",
+          "tone": "danger"
+        }
+      ]
+    }
+  }
+}

@@ -346,6 +346,15 @@ export function levelRuleOf(config: LandConfig, level: number): LevelRule {
   );
 }
 
+/**
+ * 能容纳 chunks 个区块的最低等级规则；全部等级都放不下时返回最高等级。
+ * 使用场景：合并领地后确定目标领地等级；admin_relevel 把现有领地提升到放得下自身区块数的等级。
+ */
+export function fitLevelRule(config: LandConfig, chunks: number): LevelRule {
+  const sorted = [...config.levels].sort((a, b) => a.level - b.level);
+  return sorted.find((item) => item.chunks >= chunks) ?? sorted[sorted.length - 1] ?? DEFAULT_LAND_CONFIG.levels[0]!;
+}
+
 /** 下一等级规则。没有则表示已经满级。 */
 export function nextLevelRule(
   config: LandConfig,
