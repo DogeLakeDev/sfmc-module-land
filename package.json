@@ -1,6 +1,6 @@
 {
   "name": "@sfmc-bds/module-land",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "packageManager": "pnpm@10.8.0",
   "type": "module",
   "description": "SAPI module: 区块领地、三维子区域、成员角色与领地银行",
