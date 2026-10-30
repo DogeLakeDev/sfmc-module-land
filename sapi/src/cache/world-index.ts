@@ -289,7 +289,10 @@ export class WorldIndex {
 
   /**
    * 定位方块所在的领地和区域。
-   * 先用区块键 O(1) 找到领地，再只检查覆盖该区块的子区域。
+   * 子区域优先于区块归属：命中的普通区域即使越出本领地区块（落在他人领地或荒野），
+   * 该位置也按子区域所属领地解析，原领主与其成员在区域内保留权限。
+   * 越界子区域只来自迁移遗留数据；创建/调整仍要求完整位于本领地区块内。
+   * 未命中子区域时，再用区块键 O(1) 找到领地并回退其默认区域。
    */
   locate(
     dimensionId: string,
@@ -299,19 +302,38 @@ export class WorldIndex {
   ): Located | undefined {
     const chunk = chunkOf(dimensionId, x, z);
     const key = claimKey(chunk.dimensionId, chunk.chunkX, chunk.chunkZ);
+    const best = this.boxAreaAt(key, dimensionId, x, y, z);
+    if (best) {
+      const owner = this.lands.get(best.landId);
+      if (owner) return { land: owner, area: best, specific: true };
+    }
     const landId = this.claims.get(key);
     if (!landId) return undefined;
     const land = this.lands.get(landId);
     if (!land) return undefined;
-    const candidates = this.areaChunks.get(key) ?? [];
+    return { land, area: this.defaultAreaOf(land), specific: false };
+  }
+
+  /**
+   * 覆盖某点的最小普通区域，不限所属领地。
+   * 多个区域同时覆盖时取体积最小者（最具体）；所属领地已不在索引中的孤立区域跳过。
+   * 使用场景：locate 判定子区域是否压过区块归属。
+   */
+  private boxAreaAt(
+    key: string,
+    dimensionId: string,
+    x: number,
+    y: number,
+    z: number,
+  ): AreaState | undefined {
     let best: AreaState | undefined;
     let bestVolume = Number.POSITIVE_INFINITY;
-    for (const areaId of candidates) {
+    for (const areaId of this.areaChunks.get(key) ?? []) {
       const area = this.areas.get(areaId);
       if (
         !area?.box ||
         area.dimensionId !== dimensionId ||
-        area.landId !== landId
+        !this.lands.has(area.landId)
       )
         continue;
       if (!containsPoint(area.box, x, y, z)) continue;
@@ -321,8 +343,7 @@ export class WorldIndex {
         bestVolume = volume;
       }
     }
-    if (best) return { land, area: best, specific: true };
-    return { land, area: this.defaultAreaOf(land), specific: false };
+    return best;
   }
 
   /**

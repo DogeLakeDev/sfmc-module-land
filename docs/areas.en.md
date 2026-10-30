@@ -35,6 +35,10 @@ For integer half-open bounds, each axis covers floor(min/16) through floor((max-
 
 Creation and resize recheck containment/overlap inside the write queue. Unclaim rejects any claim used by a box area and never permits the land’s final claim to be released. To shrink ownership, delete or resize dependent areas first.
 
+## Overflowing areas take priority
+
+Migrated data may contain box areas that extend beyond their land's claims (`land diagnose` reports them as overflowing). Lookup gives box areas priority over chunk ownership: a position inside such an area resolves to the area's land for permissions and flags even when the chunk belongs to another land or is wilderness, so the original owner and members keep their rights there and the chunk owner is treated as a non-member. Space outside the area still belongs to the chunk owner. When several areas cover a point, the smallest one wins. Creation and resize still reject overflow as described above.
+
 ## Selection workflow and limits
 
 ```text
